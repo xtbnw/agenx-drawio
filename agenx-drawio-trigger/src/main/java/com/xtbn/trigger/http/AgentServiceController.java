@@ -2,7 +2,11 @@ package com.xtbn.trigger.http;
 
 import com.google.adk.events.Event;
 import com.xtbn.api.IAgentService;
-import com.xtbn.api.dto.*;
+import com.xtbn.api.dto.AiAgentConfigResponseDTO;
+import com.xtbn.api.dto.ChatRequestDTO;
+import com.xtbn.api.dto.ChatResponseDTO;
+import com.xtbn.api.dto.CreateSessionRequestDTO;
+import com.xtbn.api.dto.CreateSessionResponseDTO;
 import com.xtbn.api.response.Response;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.chat.service.IChatService;
@@ -11,7 +15,11 @@ import com.xtbn.types.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Resource;
@@ -68,7 +76,8 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<CreateSessionResponseDTO> createSession(@RequestBody CreateSessionRequestDTO requestDTO) {
         try {
-            String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId());
+            boolean refresh = Boolean.TRUE.equals(requestDTO.getRefresh());
+            String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId(), refresh);
 
             CreateSessionResponseDTO responseDTO = new CreateSessionResponseDTO();
             responseDTO.setSessionId(sessionId);
@@ -170,5 +179,4 @@ public class AgentServiceController implements IAgentService {
         payload.put("timestamp", event.timestamp());
         return payload;
     }
-
 }

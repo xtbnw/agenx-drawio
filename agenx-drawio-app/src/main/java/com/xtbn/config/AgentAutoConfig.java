@@ -1,4 +1,4 @@
-﻿package com.xtbn.config;
+package com.xtbn.config;
 
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
