@@ -25,19 +25,10 @@
                     request-timeout: 5
             agents:
               - name: StableBlueprintGeneratorAgent
-                description: Generates the first diagram blueprint or improves the current blueprint before review.
+                description: Generates the first diagram blueprint.
                 instruction: |
-                  You are a draw.io diagram blueprint generation agent in an iterative workflow.
-
-                  Current blueprint, if any:
-                  {stable_blueprint}
-
-                  Previous review feedback, if any:
-                  {stable_blueprint_review}
-
-                  Task:
-                  - If there is no current blueprint, generate an initial blueprint from the user's request.
-                  - If there is a current blueprint, improve it using the latest review feedback.
+                  You are a draw.io diagram blueprint generation agent in an workflow.
+                  Generate the first blueprint from the user's request.
 
                   Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
                   Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.

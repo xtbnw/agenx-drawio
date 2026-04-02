@@ -3,9 +3,10 @@ package com.xtbn.domain.agent.service.assmble.nodes;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.google.adk.agents.BaseAgent;
 import com.google.adk.plugins.BasePlugin;
-import com.google.adk.runner.InMemoryRunner;
+import com.google.adk.runner.Runner;
 import com.google.common.collect.ImmutableList;
 import com.xtbn.domain.agent.adapter.port.registry.IBeanRegistry;
+import com.xtbn.domain.agent.adapter.repository.ISharedRunnerComponentRepository;
 import com.xtbn.domain.agent.model.entity.AssembleCommandEntity;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
@@ -21,11 +22,16 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.xtbn.types.common.Constants.APP_NAME;
+
 @Slf4j
 @Service
 public class RunnerNode extends AbstractSupportNode {
     @Resource
     private IBeanRegistry beanRegistry;
+    @Resource
+    private ISharedRunnerComponentRepository sharedRunnerComponentService;
+
     @Override
     protected AgentRegisterVO doApply(AssembleCommandEntity requestParameter, DefaultAssembleFactory.DynamicContext dynamicContext) throws Exception {
         log.info("Agent组装-节点：RunnerNode");
@@ -37,7 +43,7 @@ public class RunnerNode extends AbstractSupportNode {
         String rootAgentDesc = agentConfigVO.getRootAgent().getRootAgentDesc();
 
 
-        InMemoryRunner runner = getRunner(dynamicContext, agentConfigVO, appName);
+        Runner runner = getRunner(dynamicContext, agentConfigVO, appName);
 
         AgentRegisterVO agentRegisterVO = AgentRegisterVO.builder()
                 .appName(appName)
@@ -54,7 +60,7 @@ public class RunnerNode extends AbstractSupportNode {
         return defaultStrategyHandler;
     }
 
-    private InMemoryRunner getRunner(DefaultAssembleFactory.DynamicContext dynamicContext, AgentConfigVO agentConfigVO, String appName) {
+    private Runner getRunner(DefaultAssembleFactory.DynamicContext dynamicContext, AgentConfigVO agentConfigVO, String appName) {
         AgentConfigVO.AgentRuntime.Runner runnerConfig = agentConfigVO.getRuntime().getRunner();
 
         String agentName = runnerConfig.getAgentName();
@@ -77,6 +83,12 @@ public class RunnerNode extends AbstractSupportNode {
             plugins = ImmutableList.of();
         }
 
-        return new InMemoryRunner(baseAgent, appName, plugins);
+        return Runner.builder()
+                .agent(baseAgent)
+                .appName(APP_NAME)
+                .sessionService(sharedRunnerComponentService.getSharedSessionService())
+                .memoryService(sharedRunnerComponentService.getSharedMemoryService())
+                .plugins(plugins)
+                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.xtbn.domain.chat.service.impl;
 
 import com.google.adk.events.Event;
 import com.google.adk.runner.InMemoryRunner;
+import com.google.adk.runner.Runner;
 import com.google.adk.sessions.Session;
 import com.google.genai.types.Content;
 import com.google.genai.types.Part;
@@ -20,14 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.xtbn.types.common.Constants.APP_NAME;
 
 @Slf4j
 @Service
@@ -39,7 +38,6 @@ public class ChatService implements IChatService {
     private AgentAutoConfigProperties agentAutoConfigProperties;
 
     private final Map<String, String> userSessions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Object> state = new ConcurrentHashMap<>();
 
     @Override
     public List<AgentConfigVO.RootAgent> queryAgentConfigList() {
@@ -63,16 +61,37 @@ public class ChatService implements IChatService {
 
     @Override
     public String createSession(String agentId, String userId, boolean refresh) {
-        AgentRegisterVO preferredAgent = getAgentRegister(agentId);
-        String sessionKey = userId;
-
+        AgentRegisterVO agentRegisterVO = getAgentRegister(agentId);
+        String oldSessionId = userSessions.get(userId);
         if (refresh) {
-            String sessionId = createSharedSession(userId, preferredAgent);
-            userSessions.put(sessionKey, sessionId);
+            if (oldSessionId != null && !oldSessionId.isBlank()) {
+                deleteSessionQuietly(agentRegisterVO, userId, oldSessionId);//TODO 后续历史会话，可以保留
+            }
+            String sessionId = newSession(userId, agentRegisterVO);
+            userSessions.put(userId, sessionId);
             return sessionId;
         }
+        return userSessions.computeIfAbsent(userId, key -> newSession(userId, getAgentRegister(agentId)));
+    }
 
-        return userSessions.computeIfAbsent(sessionKey, key -> createSharedSession(userId, preferredAgent));
+    private void deleteSessionQuietly(AgentRegisterVO agentRegisterVO, String userId, String sessionId) {
+        try {
+            agentRegisterVO.getRunner()
+                    .sessionService()
+                    .deleteSession(APP_NAME, userId, sessionId)
+                    .blockingAwait();
+        } catch (Exception e) {
+            log.warn("Delete session failed, userId={}, sessionId={}", userId, sessionId, e);
+        }
+    }
+
+    private String newSession(String userId, AgentRegisterVO agentRegisterVO) {
+        String sessionId = UUID.randomUUID().toString();
+        agentRegisterVO.getRunner()
+                .sessionService()
+                .createSession(APP_NAME, userId, new HashMap<>(), sessionId)
+                .blockingGet();
+        return sessionId;
     }
 
     @Override
@@ -92,7 +111,7 @@ public class ChatService implements IChatService {
         AgentRegisterVO agentRegisterVO = getAgentRegister(agentId);
         ensureSessionExists(agentRegisterVO, userId, sessionId);
 
-        InMemoryRunner runner = agentRegisterVO.getRunner();
+        Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
         Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
 
@@ -107,7 +126,7 @@ public class ChatService implements IChatService {
         AgentRegisterVO agentRegisterVO = getAgentRegister(agentId);
         ensureSessionExists(agentRegisterVO, userId, sessionId);
 
-        InMemoryRunner runner = agentRegisterVO.getRunner();
+        Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
         Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
 
@@ -141,7 +160,7 @@ public class ChatService implements IChatService {
 
         ensureSessionExists(agentRegisterVO, userId, sessionId);
 
-        InMemoryRunner runner = agentRegisterVO.getRunner();
+        Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
         Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
 
@@ -164,52 +183,15 @@ public class ChatService implements IChatService {
         return agentRegisterVO;
     }
 
-    private String createSharedSession(String userId, AgentRegisterVO preferredAgent) {
-        String preferredAppName = preferredAgent.getAppName();
-        String sessionId = UUID.randomUUID().toString();
-
-        syncSession(preferredAgent, userId, sessionId);
-
-        Map<String, AgentConfigVO> tables = agentAutoConfigProperties.getTables();
-        if (null != tables) {
-            for (AgentConfigVO agentConfig : tables.values()) {
-                if (null == agentConfig.getRootAgent()) {
-                    continue;
-                }
-
-                String agentId = agentConfig.getRootAgent().getRootAgentId();
-                AgentRegisterVO agentRegisterVO = beanRegistry.getBean(agentId, AgentRegisterVO.class);
-                if (null == agentRegisterVO) {
-                    continue;
-                }
-
-                if (preferredAppName.equals(agentRegisterVO.getAppName())) {
-                    continue;
-                }
-
-                syncSession(agentRegisterVO, userId, sessionId);
-            }
-        }
-
-        return sessionId;
-    }
-
     private void ensureSessionExists(AgentRegisterVO agentRegisterVO, String userId, String sessionId) {
         Session session = agentRegisterVO.getRunner()
                 .sessionService()
-                .getSession(agentRegisterVO.getAppName(), userId, sessionId, Optional.empty())
+                .getSession(APP_NAME, userId, sessionId, Optional.empty())
                 .blockingGet();
 
         if (null == session) {
-            syncSession(agentRegisterVO, userId, sessionId);
+            throw new AppException("SESSION_NOT_FOUND");
         }
-    }
-
-    private void syncSession(AgentRegisterVO agentRegisterVO, String userId, String sessionId) {
-        agentRegisterVO.getRunner()
-                .sessionService()
-                .createSession(agentRegisterVO.getAppName(), userId, state, sessionId)
-                .blockingGet();
     }
 
     @Override
@@ -241,7 +223,7 @@ public class ChatService implements IChatService {
         }
 
         Content content = Content.builder().role("user").parts(parts).build();
-        InMemoryRunner runner = agentRegisterVO.getRunner();
+        Runner runner = agentRegisterVO.getRunner();
         Flowable<Event> events = runner.runAsync(chatCommandEntity.getUserId(), chatCommandEntity.getSessionId(), content);
 
         List<String> outputs = new ArrayList<>();

@@ -76,6 +76,7 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<CreateSessionResponseDTO> createSession(@RequestBody CreateSessionRequestDTO requestDTO) {
         try {
+            log.info("新会话:调用agent-{},发起人-{},是否刷新会话-{}", requestDTO.getAgentId(), requestDTO.getUserId(), requestDTO.getRefresh());
             boolean refresh = Boolean.TRUE.equals(requestDTO.getRefresh());
             String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId(), refresh);
 

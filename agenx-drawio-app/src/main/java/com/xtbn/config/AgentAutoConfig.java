@@ -1,5 +1,9 @@
 package com.xtbn.config;
 
+import com.google.adk.memory.BaseMemoryService;
+import com.google.adk.memory.InMemoryMemoryService;
+import com.google.adk.sessions.BaseSessionService;
+import com.google.adk.sessions.InMemorySessionService;
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
 import com.xtbn.domain.agent.service.assmble.component.mcp.server.DrawioXmlToolService;
@@ -39,4 +43,6 @@ public class AgentAutoConfig implements ApplicationListener<ApplicationReadyEven
     public ToolCallbackProvider drawioXmlTools(DrawioXmlToolService drawioXmlToolService) {
         return MethodToolCallbackProvider.builder().toolObjects(drawioXmlToolService).build();
     }
+
+
 }
