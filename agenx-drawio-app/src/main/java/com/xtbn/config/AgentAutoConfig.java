@@ -1,8 +1,8 @@
-package com.xtbn.config;
+﻿package com.xtbn.config;
 
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.server.MyTestMcpService;
+import com.xtbn.domain.agent.service.assmble.component.mcp.server.DrawioXmlToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -28,15 +28,15 @@ public class AgentAutoConfig implements ApplicationListener<ApplicationReadyEven
     @Override
     public void onApplicationEvent(@NonNull ApplicationReadyEvent event) {
         try {
-//            log.info("Agent 智能体装配 {}", JSON.toJSONString(agentAutoConfigProperties.getTables().values()));
+//            log.info("Agent 配置 {}", JSON.toJSONString(agentAutoConfigProperties.getTables().values()));
             assembleService.assembleAgents(new ArrayList<>(agentAutoConfigProperties.getTables().values()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Bean("myToolCallbackProvider")
-    public ToolCallbackProvider testTools(MyTestMcpService testService) {
-        return MethodToolCallbackProvider.builder().toolObjects(testService).build();
+    @Bean("drawioXmlToolCallbackProvider")
+    public ToolCallbackProvider drawioXmlTools(DrawioXmlToolService drawioXmlToolService) {
+        return MethodToolCallbackProvider.builder().toolObjects(drawioXmlToolService).build();
     }
 }

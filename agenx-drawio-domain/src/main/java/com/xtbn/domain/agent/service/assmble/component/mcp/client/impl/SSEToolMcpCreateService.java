@@ -19,6 +19,10 @@ public class SSEToolMcpCreateService implements IToolMcpCreateService {
     @Override
     public ToolCallback[] buildToolCallback(AgentConfigVO.AgentRuntime.ChatModel.ToolMcp toolMcp) throws Exception {
         AgentConfigVO.AgentRuntime.ChatModel.ToolMcp.SSEServerParameters sseConfig = toolMcp.getSse();
+        if (sseConfig == null || StringUtils.isBlank(sseConfig.getBaseUri())) {
+            log.warn("skip sse mcp init because baseUri is blank");
+            return new ToolCallback[0];
+        }
         String originalBaseUri = sseConfig.getBaseUri();
         String baseUri;
         String sseEndpoint;
@@ -39,12 +43,16 @@ public class SSEToolMcpCreateService implements IToolMcpCreateService {
                 .sseEndpoint(sseEndpoint) // 使用截取或默认的 sseEndpoint
                 .build();
 
-        McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofSeconds(sseConfig.getRequestTimeout())).build();
-        var init_sse = mcpSyncClient.initialize();
-
-        log.info("Tool SSE MCP Initialized {}", init_sse);
-        return SyncMcpToolCallbackProvider.builder()
-                .mcpClients(mcpSyncClient).build()
-                .getToolCallbacks();
+        try {
+            McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofSeconds(sseConfig.getRequestTimeout())).build();
+            var initSse = mcpSyncClient.initialize();
+            log.info("Tool SSE MCP Initialized {}", initSse);
+            return SyncMcpToolCallbackProvider.builder()
+                    .mcpClients(mcpSyncClient).build()
+                    .getToolCallbacks();
+        } catch (Exception e) {
+            log.warn("skip sse mcp init for {} because initialization failed: {}", sseConfig.getName(), e.getMessage());
+            return new ToolCallback[0];
+        }
     }
 }

@@ -12,6 +12,10 @@ public interface IChatService {
 
     String createSession(String agentId, String userId);
 
+    String handleFinalMessage(String agentId, String userId, String message);
+
+    String handleFinalMessage(String agentId, String userId, String sessionId, String message);
+
     List<String> handleMessage(String agentId, String userId, String message);
 
     List<String> handleMessage(String agentId, String userId, String sessionId, String message);

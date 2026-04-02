@@ -1,0 +1,102 @@
+﻿ai:
+  agent:
+    config:
+      tables:
+        quality:
+          app-name: quality
+          root-agent:
+            root-agent-id: quality
+            root-agent-name: Quality Draw.io Agent
+            root-agent-desc: High-quality three-agent mode that generates, reviews, and revises draw.io XML.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
+              api-key: ${AI_API_KEY}
+              completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+            chat-model:
+              model: ${AI_MODEL:glm-4.7}
+              tool-mcp-list:
+                - sse:
+                    name: baidu-search
+                    base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
+                    request-timeout: 5
+            agents:
+              - name: InitialXmlGeneratorAgent
+                description: Generates the first draw.io XML draft.
+                instruction: |
+                  You are the initial draw.io XML generator.
+
+                  Read the user's request and produce the first importable draw.io XML draft.
+                  Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
+                  Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
+
+                  Hard requirements:
+                  1. The entire response must be XML only. Do not output explanations or markdown fences.
+                  2. The response must start with <mxfile and end with </mxfile>.
+                  3. The XML must be importable by draw.io and include all required root cells and geometry.
+                  4. Every visible node must be an <mxCell> with vertex="1" and geometry.
+                  5. Every connector must be an <mxCell> with edge="1", source, target, and geometry.
+                  6. Prefer a readable, complete structure.
+                output-key: initial_drawio_xml
+              - name: XmlReviewAgent
+                description: Reviews the XML draft for structural and diagram quality issues.
+                instruction: |
+                  You are a draw.io XML reviewer.
+
+                  Review the following XML draft:
+                  {initial_drawio_xml}
+
+                  Evaluate:
+                  - XML structural validity
+                  - Whether it is likely importable by draw.io
+                  - Missing root cells, missing geometry, bad ids, missing source/target
+                  - Layout readability and completeness against the user request
+                  - Whether the XML contains extra non-XML text or unstable style usage
+
+                  Output plain text only using this format:
+                  REVIEW_STATUS: PASS or REVISE
+                  ISSUES:
+                  - item
+                  - item
+                  FIX_PLAN:
+                  - item
+
+                  Rules:
+                  - Every issue must be concrete and actionable.
+                  - Do not rewrite the XML.
+                  - Do not output praise-only reviews.
+
+                  If the draft is already strong, use REVIEW_STATUS: PASS and keep the issue list minimal.
+                output-key: xml_review_feedback
+              - name: XmlRevisionAgent
+                description: Revises the XML according to the review feedback and returns final XML.
+                instruction: |
+                  You are a draw.io XML revision agent.
+
+                  Revise the following XML draft according to the review feedback and return the improved final draw.io XML.
+
+                  Original XML draft:
+                  {initial_drawio_xml}
+
+                  Review feedback:
+                  {xml_review_feedback}
+
+                  Hard requirements:
+                  1. The entire response must be XML only. Do not output explanations or markdown fences.
+                  2. The response must start with <mxfile and end with </mxfile>.
+                  3. Keep the result importable by draw.io.
+                  4. Preserve useful parts of the original draft while fixing the issues named in the review.
+                  5. Include all required cells, ids, source/target links, and geometry.
+                  6. Fix the review issues directly rather than producing a fresh unrelated layout.
+                output-key: final_drawio_xml
+            agent-workflows:
+              - type: sequential
+                name: DrawioReviewWorkflow
+                description: Generate XML, review it, and revise it once.
+                sub-agents:
+                  - InitialXmlGeneratorAgent
+                  - XmlReviewAgent
+                  - XmlRevisionAgent
+            runner:
+              agent-name: DrawioReviewWorkflow

@@ -102,7 +102,7 @@ public class AgentServiceController implements IAgentService {
                 sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId());
             }
 
-            List<String> messages = chatService.handleMessage(
+            String finalMessage = chatService.handleFinalMessage(
                     requestDTO.getAgentId(),
                     requestDTO.getUserId(),
                     sessionId,
@@ -110,7 +110,7 @@ public class AgentServiceController implements IAgentService {
             );
 
             ChatResponseDTO responseDTO = new ChatResponseDTO();
-            responseDTO.setContent(String.join("\n", messages));
+            responseDTO.setContent(finalMessage);
 
             return Response.<ChatResponseDTO>builder()
                     .code(ResponseCode.SUCCESS.getCode())

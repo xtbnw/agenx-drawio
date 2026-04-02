@@ -1,0 +1,137 @@
+﻿ai:
+  agent:
+    config:
+      tables:
+        stable:
+          app-name: stable
+          root-agent:
+            root-agent-id: stable
+            root-agent-name: Stable Draw.io Agent
+            root-agent-desc: Stable mode that iterates blueprint quality first and renders final XML with the local service.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
+              api-key: ${AI_API_KEY}
+              completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+            chat-model:
+              model: ${AI_MODEL:glm-4.7}
+              tool-mcp-list:
+                - local:
+                    name: drawioXmlToolCallbackProvider
+                - sse:
+                    name: baidu-search
+                    base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
+                    request-timeout: 5
+            agents:
+              - name: StableBlueprintGeneratorAgent
+                description: Generates the first diagram blueprint or improves the current blueprint before review.
+                instruction: |
+                  You are a draw.io diagram blueprint generation agent in an iterative workflow.
+
+                  Current blueprint, if any:
+                  {stable_blueprint}
+
+                  Previous review feedback, if any:
+                  {stable_blueprint_review}
+
+                  Task:
+                  - If there is no current blueprint, generate an initial blueprint from the user's request.
+                  - If there is a current blueprint, improve it using the latest review feedback.
+
+                  Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
+                  Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
+
+                  Output plain text only with these sections:
+                  DIAGRAM_TYPE:
+                  PAGE_SIZE:
+                  LAYOUT_DIRECTION:
+                  CONTAINERS:
+                  NODES:
+                  EDGES:
+                  STYLE_GUIDELINES:
+                  ASSUMPTIONS:
+
+                  Hard requirements:
+                  1. Output blueprint text only. Do not output XML.
+                  2. Include node ids, labels, types, parent-child relationships, and coordinates or clear relative placement.
+                  3. Keep the blueprint implementation-ready for final XML rendering.
+                  4. Prioritize correctness and readability.
+                output-key: stable_blueprint
+              - name: StableBlueprintReviewAgent
+                description: Reviews the current blueprint and determines whether further changes are needed.
+                instruction: |
+                  You are a draw.io blueprint review agent in an iterative workflow.
+
+                  Review this blueprint:
+                  {stable_blueprint}
+
+                  Output plain text only using this format:
+                  REVIEW_STATUS: PASS or REVISE
+                  ISSUES:
+                  - item
+                  - item
+                  FIX_PLAN:
+                  - item
+
+                  Rules:
+                  - Review blueprint completeness, layout clarity, node/edge consistency, and fit to the user's request.
+                  - Do not output XML.
+                  - Every issue must be concrete and actionable.
+
+                  If the blueprint already matches the user's request well and is ready for rendering, return REVIEW_STATUS: PASS.
+                output-key: stable_blueprint_review
+              - name: StableBlueprintRevisionAgent
+                description: Revises the current blueprint using the latest review feedback.
+                instruction: |
+                  You are a draw.io blueprint revision agent in an iterative workflow.
+
+                  Current blueprint:
+                  {stable_blueprint}
+
+                  Latest review feedback:
+                  {stable_blueprint_review}
+
+                  If the review status is PASS, return the current blueprint unchanged.
+                  Otherwise revise it and return the improved blueprint.
+
+                  Hard requirements:
+                  1. Output blueprint text only. Do not output XML.
+                  2. Keep all required blueprint sections.
+                  3. Preserve good structure and fix the reported issues directly.
+                output-key: stable_blueprint
+              - name: StableXmlRenderAgent
+                description: Uses the local XML rendering service to return final draw.io XML.
+                instruction: |
+                  You are the final draw.io XML rendering agent.
+
+                  Convert the final blueprint below into the exact request format required by the local renderDrawioXml tool, call the tool exactly once, and return the tool result unchanged.
+
+                  Final blueprint:
+                  {stable_blueprint}
+
+                  Use the Baidu search MCP only if the blueprint clearly depends on missing external facts. In most cases do not search again.
+
+                  Hard requirements:
+                  1. Call renderDrawioXml exactly once.
+                  2. Do not hand-write XML in the model response.
+                  3. After the tool call returns, output the tool result only.
+                  4. Do not add explanations, markdown fences, comments, or prefixes.
+                output-key: stable_drawio_xml
+            agent-workflows:
+              - type: loop
+                name: StableBlueprintLoop
+                description: Generate, review, and revise the diagram blueprint iteratively.
+                sub-agents:
+                  - StableBlueprintGeneratorAgent
+                  - StableBlueprintReviewAgent
+                  - StableBlueprintRevisionAgent
+                max-iterations: 5
+              - type: sequential
+                name: StableFinalWorkflow
+                description: Run blueprint optimization first and then render final XML with the local service.
+                sub-agents:
+                  - StableBlueprintLoop
+                  - StableXmlRenderAgent
+            runner:
+              agent-name: StableFinalWorkflow

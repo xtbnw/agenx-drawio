@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
@@ -85,6 +86,19 @@ public class ChatService implements IChatService {
     }
 
     @Override
+    public String handleFinalMessage(String agentId, String userId, String message) {
+        AgentRegisterVO agentRegisterVO = beanRegistry.getBean(agentId, AgentRegisterVO.class);
+
+        if (null == agentRegisterVO) {
+            throw new AppException(ResponseCode.E0001.getCode());
+        }
+
+        String sessionId = createSession(agentId, userId);
+
+        return handleFinalMessage(agentId, userId, sessionId, message);
+    }
+
+    @Override
     public List<String> handleMessage(String agentId, String userId, String sessionId, String message) {
 
         AgentRegisterVO agentRegisterVO = beanRegistry.getBean(agentId, AgentRegisterVO.class);
@@ -102,6 +116,40 @@ public class ChatService implements IChatService {
         events.blockingForEach(event -> outputs.add(event.stringifyContent()));
 
         return outputs;
+    }
+
+    @Override
+    public String handleFinalMessage(String agentId, String userId, String sessionId, String message) {
+
+        AgentRegisterVO agentRegisterVO = beanRegistry.getBean(agentId, AgentRegisterVO.class);
+
+        if (null == agentRegisterVO) {
+            throw new AppException(ResponseCode.E0001.getCode());
+        }
+
+        InMemoryRunner runner = agentRegisterVO.getRunner();
+
+        Content userMsg = Content.fromParts(Part.fromText(message));
+        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
+
+        AtomicReference<String> finalOutput = new AtomicReference<>();
+        AtomicReference<String> lastNonEmptyOutput = new AtomicReference<>();
+
+        events.blockingForEach(event -> {
+            String content = event.stringifyContent();
+            if (null != content && !content.trim().isEmpty()) {
+                lastNonEmptyOutput.set(content);
+                if (event.finalResponse()) {
+                    finalOutput.set(content);
+                }
+            }
+        });
+
+        if (null != finalOutput.get()) {
+            return finalOutput.get();
+        }
+
+        return null != lastNonEmptyOutput.get() ? lastNonEmptyOutput.get() : "";
     }
 
     @Override

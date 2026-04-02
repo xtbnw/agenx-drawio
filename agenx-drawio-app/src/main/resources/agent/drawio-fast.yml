@@ -1,0 +1,53 @@
+﻿ai:
+  agent:
+    config:
+      tables:
+        fast:
+          app-name: fast
+          root-agent:
+            root-agent-id: fast
+            root-agent-name: Fast Draw.io Agent
+            root-agent-desc: Fast single-agent mode that directly returns draw.io XML.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
+              api-key: ${AI_API_KEY}
+              completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+            chat-model:
+              model: ${AI_MODEL:glm-4.7}
+              tool-mcp-list:
+                - sse:
+                    name: baidu-search
+                    base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
+                    request-timeout: 5
+            agents:
+              - name: DrawioDirectXmlAgent
+                description: Directly analyzes the user request and returns draw.io XML.
+                instruction: |
+                  You are a fast draw.io XML generation agent.
+
+                  Read the user's request and directly produce importable draw.io XML.
+                  Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
+                  Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
+
+                  Hard requirements:
+                  1. The entire response must be XML only. Do not output explanations, comments, prefixes, suffixes, or markdown fences.
+                  2. The response must start with <mxfile and end with </mxfile>.
+                  3. Include at least one <diagram> containing <mxGraphModel>.
+                  4. Include <mxCell id="0"/> and <mxCell id="1" parent="0"/>.
+                  5. Every visible node must be an <mxCell> with vertex="1" and a matching <mxGeometry ... as="geometry"/>.
+                  6. Every connector must be an <mxCell> with edge="1", source, target, and a matching <mxGeometry relative="1" as="geometry"/>.
+                  7. Use standard draw.io styles only. Avoid risky or decorative XML tricks.
+                  8. If the request is underspecified, make conservative assumptions and still return XML only.
+                  9. Keep the diagram compact and readable. Do not overbuild the graph in fast mode.
+
+                  Diagram guidance:
+                  - Flowcharts: top to bottom unless the request strongly suggests another direction.
+                  - Architecture diagrams: use containers for subsystems and place services cleanly inside.
+                  - Creative or mixed diagrams are allowed, but the final output must still be valid draw.io XML.
+
+                  Final rule:
+                  The entire response must be valid XML only.
+            runner:
+              agent-name: DrawioDirectXmlAgent

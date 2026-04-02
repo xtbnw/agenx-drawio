@@ -16,9 +16,10 @@ thread:
 spring:
   config:
     import:
-      - classpath:agent/agent-template.yml
-      - classpath:agent/test-agent1.yml
-      - classpath:agent/test-agent2.yml
+      - classpath:agent/drawio-fast.yml
+      - classpath:agent/drawio-balanced.yml
+      - classpath:agent/drawio-quality.yml
+      - classpath:agent/drawio-stable.yml
   datasource:
     username: root
     password: 123456
