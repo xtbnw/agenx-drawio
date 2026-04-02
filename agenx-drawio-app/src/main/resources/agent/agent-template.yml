@@ -1,0 +1,66 @@
+ai:
+  agent:
+    config:
+      tables:
+        demoAgent:
+          app-name: demo-agent-app
+          root-agent:
+            root-agent-id: "100001"
+            root-agent-name: Demo Agent
+            root-agent-desc: A configurable demo agent.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://api.openai.com}
+              api-key: ${AI_API_KEY:replace-me}
+              completions-path: ${AI_COMPLETIONS_PATH:/v1/chat/completions}
+            chat-model:
+              model: ${AI_MODEL:gpt-4o-mini}
+              tool-mcp-list:
+                - local:
+                    name: myToolCallbackProvider
+                - sse:
+                    name: remote-search
+                    base-uri: ${REMOTE_MCP_BASE_URI:http://localhost:8081}
+                    sse-endpoint: ${REMOTE_MCP_SSE_ENDPOINT:/sse}
+                    request-timeout: 5
+                - stdio:
+                    name: local-filesystem
+                    request-timeout: 5
+                    server-parameters:
+                      command: npx
+                      args:
+                        - -y
+                        - "@modelcontextprotocol/server-filesystem"
+                        - .
+                      env:
+                        NODE_ENV: production
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
+                - type: directory
+                  path: D:/skills/shared
+            agents:
+              - name: PlannerAgent
+                description: Break tasks into an execution plan.
+                instruction: |
+                  You are a planning agent.
+                  Analyze the user request and produce a concise plan.
+                output-key: plan_result
+              - name: WriterAgent
+                description: Generate the final answer.
+                instruction: |
+                  You are a writing agent.
+                  Use the plan_result when available and return the final answer.
+                output-key: final_result
+            agent-workflows:
+              - type: sequential
+                name: DemoWorkflow
+                description: Execute planning and then writing.
+                sub-agents:
+                  - PlannerAgent
+                  - WriterAgent
+                max-iterations: 3
+            runner:
+              agent-name: DemoWorkflow
+              plugin-name-list:
+                - myTestPlugin

@@ -1,0 +1,37 @@
+ai:
+  agent:
+    config:
+      tables:
+        testAgent1:
+          app-name: testAgent1
+          root-agent:
+            root-agent-id: 100001
+            root-agent-name: 单一智能体
+            root-agent-desc: 单一智能体
+          runtime:
+            ai-api:
+              base-url: https://open.bigmodel.cn/api/paas/v4/
+              api-key: ${AI_API_KEY}
+              completions-path: chat/completions
+            chat-model:
+              model: glm-4.7
+              tool-mcp-list:
+                - sse:
+                    name: baidu-search
+                    base-uri: http://appbuilder.baidu.com/v2/ai_search/mcp/
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY}
+                    request-timeout: 5000
+                - local:
+                    name: myToolCallbackProvider
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
+            agents:
+              - name: onlyOneAgent
+                description: 能通过百度检索的智能体
+                instruction: |
+                  通过百度检索用户问题相关的内容，并根据检索内容，给出回答。
+            runner:
+              agent-name: onlyOneAgent
+              plugin-name-list:
+                - myTestPlugin

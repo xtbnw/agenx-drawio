@@ -1,0 +1,891 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "API Documentation",
+    "version" : "1.0"
+  },
+  "paths" : {
+    "/api/v1/query_ai_agent_config_list" : {
+      "get" : {
+        "summary" : "queryAiAgentConfigList",
+        "description" : "queryAiAgentConfigList",
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "code" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "info" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "data" : {
+                      "type" : "array",
+                      "description" : "",
+                      "items" : {
+                        "type" : "object",
+                        "properties" : {
+                          "agentId" : {
+                            "type" : "string",
+                            "description" : "智能体ID"
+                          },
+                          "agentName" : {
+                            "type" : "string",
+                            "description" : "智能体名称"
+                          },
+                          "agentDesc" : {
+                            "type" : "string",
+                            "description" : "智能体描述"
+                          }
+                        },
+                        "description" : "com.xtbn.api.dto.AiAgentConfigResponseDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/create_session" : {
+      "get" : {
+        "summary" : "createSession",
+        "description" : "createSession",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agentId" : {
+                    "type" : "string",
+                    "description" : "智能体ID"
+                  },
+                  "userId" : {
+                    "type" : "string",
+                    "description" : "用户ID"
+                  }
+                },
+                "description" : ""
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "code" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "info" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "data" : {
+                      "type" : "object",
+                      "properties" : {
+                        "sessionId" : {
+                          "type" : "string",
+                          "description" : "会话ID"
+                        }
+                      },
+                      "description" : ""
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat" : {
+      "post" : {
+        "summary" : "chat",
+        "description" : "chat",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agentId" : {
+                    "type" : "string",
+                    "description" : "智能体ID"
+                  },
+                  "userId" : {
+                    "type" : "string",
+                    "description" : "用户ID"
+                  },
+                  "sessionId" : {
+                    "type" : "string",
+                    "description" : "会话ID"
+                  },
+                  "message" : {
+                    "type" : "string",
+                    "description" : "消息内容"
+                  }
+                },
+                "description" : ""
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "code" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "info" : {
+                      "type" : "string",
+                      "description" : ""
+                    },
+                    "data" : {
+                      "type" : "object",
+                      "properties" : {
+                        "content" : {
+                          "type" : "string",
+                          "description" : "回复内容"
+                        }
+                      },
+                      "description" : ""
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat_stream" : {
+      "post" : {
+        "summary" : "chatStream",
+        "description" : "chatStream",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agentId" : {
+                    "type" : "string",
+                    "description" : "智能体ID"
+                  },
+                  "userId" : {
+                    "type" : "string",
+                    "description" : "用户ID"
+                  },
+                  "sessionId" : {
+                    "type" : "string",
+                    "description" : "会话ID"
+                  },
+                  "message" : {
+                    "type" : "string",
+                    "description" : "消息内容"
+                  }
+                },
+                "description" : ""
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "timeout" : {
+                      "type" : "integer",
+                      "description" : "",
+                      "format" : "int64",
+                      "nullable" : true
+                    },
+                    "handler" : {
+                      "type" : "object",
+                      "properties" : { },
+                      "description" : "",
+                      "nullable" : true
+                    },
+                    "earlySendAttempts" : {
+                      "type" : "array",
+                      "description" : "Store send data before handler is initialized.",
+                      "items" : {
+                        "type" : "object",
+                        "properties" : {
+                          "data" : {
+                            "type" : "object",
+                            "properties" : { },
+                            "description" : ""
+                          },
+                          "mediaType" : {
+                            "type" : "object",
+                            "properties" : {
+                              "type" : {
+                                "type" : "string",
+                                "description" : ""
+                              },
+                              "subtype" : {
+                                "type" : "string",
+                                "description" : ""
+                              },
+                              "parameters" : {
+                                "type" : "object",
+                                "properties" : {
+                                  "key" : {
+                                    "type" : "string"
+                                  }
+                                },
+                                "description" : ""
+                              },
+                              "toStringValue" : {
+                                "type" : "string",
+                                "description" : "",
+                                "nullable" : true
+                              }
+                            },
+                            "description" : "",
+                            "nullable" : true
+                          }
+                        },
+                        "description" : "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType"
+                      },
+                      "default" : "new LinkedHashSet<>(8)"
+                    },
+                    "complete" : {
+                      "type" : "boolean",
+                      "description" : "Store successful completion before the handler is initialized.",
+                      "default" : "new AtomicBoolean()"
+                    },
+                    "failure" : {
+                      "type" : "object",
+                      "properties" : {
+                        "detailMessage" : {
+                          "type" : "string",
+                          "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+                        },
+                        "cause" : {
+                          "type" : "object",
+                          "properties" : {
+                            "detailMessage" : {
+                              "type" : "string",
+                              "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+                            },
+                            "cause" : {
+                              "type" : "object",
+                              "properties" : { },
+                              "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+                              "default" : "this"
+                            },
+                            "stackTrace" : {
+                              "type" : "array",
+                              "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+                              "items" : {
+                                "type" : "object",
+                                "properties" : {
+                                  "classLoaderName" : {
+                                    "type" : "string",
+                                    "description" : "The name of the class loader."
+                                  },
+                                  "moduleName" : {
+                                    "type" : "string",
+                                    "description" : "The module name."
+                                  },
+                                  "moduleVersion" : {
+                                    "type" : "string",
+                                    "description" : "The module version."
+                                  },
+                                  "declaringClass" : {
+                                    "type" : "string",
+                                    "description" : "The declaring class."
+                                  },
+                                  "methodName" : {
+                                    "type" : "string",
+                                    "description" : "The method name."
+                                  },
+                                  "fileName" : {
+                                    "type" : "string",
+                                    "description" : "The source file name."
+                                  },
+                                  "lineNumber" : {
+                                    "type" : "integer",
+                                    "description" : "The source line number."
+                                  },
+                                  "format" : {
+                                    "maximum" : 128,
+                                    "minimum" : -127,
+                                    "type" : "integer",
+                                    "description" : "Control to show full or partial module, package, and class names.",
+                                    "default" : "0"
+                                  }
+                                }
+                              },
+                              "default" : "new StackTraceElement[0]"
+                            },
+                            "suppressedExceptions" : {
+                              "type" : "array",
+                              "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+                              "items" : {
+                                "type" : "object",
+                                "properties" : { },
+                                "description" : "java.lang.Throwable"
+                              },
+                              "default" : "Collections.emptyList()"
+                            }
+                          },
+                          "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+                          "default" : "this"
+                        },
+                        "stackTrace" : {
+                          "type" : "array",
+                          "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+                          "items" : {
+                            "type" : "object",
+                            "properties" : {
+                              "classLoaderName" : {
+                                "type" : "string",
+                                "description" : "The name of the class loader."
+                              },
+                              "moduleName" : {
+                                "type" : "string",
+                                "description" : "The module name."
+                              },
+                              "moduleVersion" : {
+                                "type" : "string",
+                                "description" : "The module version."
+                              },
+                              "declaringClass" : {
+                                "type" : "string",
+                                "description" : "The declaring class."
+                              },
+                              "methodName" : {
+                                "type" : "string",
+                                "description" : "The method name."
+                              },
+                              "fileName" : {
+                                "type" : "string",
+                                "description" : "The source file name."
+                              },
+                              "lineNumber" : {
+                                "type" : "integer",
+                                "description" : "The source line number."
+                              },
+                              "format" : {
+                                "maximum" : 128,
+                                "minimum" : -127,
+                                "type" : "integer",
+                                "description" : "Control to show full or partial module, package, and class names.",
+                                "default" : "0"
+                              }
+                            }
+                          },
+                          "default" : "new StackTraceElement[0]"
+                        },
+                        "suppressedExceptions" : {
+                          "type" : "array",
+                          "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+                          "items" : {
+                            "type" : "object",
+                            "properties" : {
+                              "detailMessage" : {
+                                "type" : "string",
+                                "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+                              },
+                              "cause" : {
+                                "type" : "object",
+                                "properties" : { },
+                                "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+                                "default" : "this"
+                              },
+                              "stackTrace" : {
+                                "type" : "array",
+                                "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+                                "items" : {
+                                  "type" : "object",
+                                  "properties" : {
+                                    "classLoaderName" : {
+                                      "type" : "string",
+                                      "description" : "The name of the class loader."
+                                    },
+                                    "moduleName" : {
+                                      "type" : "string",
+                                      "description" : "The module name."
+                                    },
+                                    "moduleVersion" : {
+                                      "type" : "string",
+                                      "description" : "The module version."
+                                    },
+                                    "declaringClass" : {
+                                      "type" : "string",
+                                      "description" : "The declaring class."
+                                    },
+                                    "methodName" : {
+                                      "type" : "string",
+                                      "description" : "The method name."
+                                    },
+                                    "fileName" : {
+                                      "type" : "string",
+                                      "description" : "The source file name."
+                                    },
+                                    "lineNumber" : {
+                                      "type" : "integer",
+                                      "description" : "The source line number."
+                                    },
+                                    "format" : {
+                                      "maximum" : 128,
+                                      "minimum" : -127,
+                                      "type" : "integer",
+                                      "description" : "Control to show full or partial module, package, and class names.",
+                                      "default" : "0"
+                                    }
+                                  }
+                                },
+                                "default" : "new StackTraceElement[0]"
+                              },
+                              "suppressedExceptions" : {
+                                "type" : "array",
+                                "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+                                "items" : {
+                                  "type" : "object",
+                                  "properties" : { },
+                                  "description" : "java.lang.Throwable"
+                                },
+                                "default" : "Collections.emptyList()"
+                              }
+                            },
+                            "description" : "java.lang.Throwable"
+                          },
+                          "default" : "Collections.emptyList()"
+                        }
+                      },
+                      "description" : "Store an error before the handler is initialized.",
+                      "nullable" : true
+                    },
+                    "timeoutCallback" : {
+                      "type" : "object",
+                      "properties" : {
+                        "delegates" : {
+                          "type" : "array",
+                          "description" : "",
+                          "items" : {
+                            "type" : "object",
+                            "properties" : { },
+                            "description" : "java.lang.Runnable"
+                          },
+                          "default" : "new ArrayList<>(1)"
+                        }
+                      },
+                      "description" : "",
+                      "default" : "new DefaultCallback()"
+                    },
+                    "errorCallback" : {
+                      "type" : "object",
+                      "properties" : { },
+                      "description" : "",
+                      "default" : "new ErrorCallback()"
+                    },
+                    "completionCallback" : {
+                      "type" : "object",
+                      "properties" : {
+                        "delegates" : {
+                          "type" : "array",
+                          "description" : "",
+                          "items" : {
+                            "type" : "object",
+                            "properties" : { },
+                            "description" : "java.lang.Runnable"
+                          },
+                          "default" : "new ArrayList<>(1)"
+                        }
+                      },
+                      "description" : "",
+                      "default" : "new DefaultCallback()"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "com.xtbn.api.dto.AiAgentConfigResponseDTO" : {
+        "type" : "object",
+        "properties" : {
+          "agentId" : {
+            "type" : "string",
+            "description" : "智能体ID"
+          },
+          "agentName" : {
+            "type" : "string",
+            "description" : "智能体名称"
+          },
+          "agentDesc" : {
+            "type" : "string",
+            "description" : "智能体描述"
+          }
+        },
+        "description" : "com.xtbn.api.dto.AiAgentConfigResponseDTO"
+      },
+      "com.xtbn.api.dto.CreateSessionResponseDTO" : {
+        "type" : "object",
+        "properties" : {
+          "sessionId" : {
+            "type" : "string",
+            "description" : "会话ID"
+          }
+        },
+        "description" : ""
+      },
+      "com.xtbn.api.dto.ChatResponseDTO" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "string",
+            "description" : "回复内容"
+          }
+        },
+        "description" : ""
+      },
+      "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.Handler" : {
+        "type" : "object",
+        "properties" : { },
+        "description" : "",
+        "nullable" : true
+      },
+      "java.lang.Object" : {
+        "type" : "object",
+        "properties" : { },
+        "description" : ""
+      },
+      "org.springframework.http.MediaType" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "description" : ""
+          },
+          "subtype" : {
+            "type" : "string",
+            "description" : ""
+          },
+          "parameters" : {
+            "type" : "object",
+            "properties" : {
+              "key" : {
+                "type" : "string"
+              }
+            },
+            "description" : ""
+          },
+          "toStringValue" : {
+            "type" : "string",
+            "description" : "",
+            "nullable" : true
+          }
+        },
+        "description" : "",
+        "nullable" : true
+      },
+      "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "object",
+            "properties" : { },
+            "description" : ""
+          },
+          "mediaType" : {
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "description" : ""
+              },
+              "subtype" : {
+                "type" : "string",
+                "description" : ""
+              },
+              "parameters" : {
+                "type" : "object",
+                "properties" : {
+                  "key" : {
+                    "type" : "string"
+                  }
+                },
+                "description" : ""
+              },
+              "toStringValue" : {
+                "type" : "string",
+                "description" : "",
+                "nullable" : true
+              }
+            },
+            "description" : "",
+            "nullable" : true
+          }
+        },
+        "description" : "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType"
+      },
+      "java.lang.Throwable" : {
+        "type" : "object",
+        "properties" : {
+          "detailMessage" : {
+            "type" : "string",
+            "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+          },
+          "cause" : {
+            "type" : "object",
+            "properties" : {
+              "detailMessage" : {
+                "type" : "string",
+                "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+              },
+              "cause" : {
+                "type" : "object",
+                "properties" : { },
+                "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+                "default" : "this"
+              },
+              "stackTrace" : {
+                "type" : "array",
+                "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "classLoaderName" : {
+                      "type" : "string",
+                      "description" : "The name of the class loader."
+                    },
+                    "moduleName" : {
+                      "type" : "string",
+                      "description" : "The module name."
+                    },
+                    "moduleVersion" : {
+                      "type" : "string",
+                      "description" : "The module version."
+                    },
+                    "declaringClass" : {
+                      "type" : "string",
+                      "description" : "The declaring class."
+                    },
+                    "methodName" : {
+                      "type" : "string",
+                      "description" : "The method name."
+                    },
+                    "fileName" : {
+                      "type" : "string",
+                      "description" : "The source file name."
+                    },
+                    "lineNumber" : {
+                      "type" : "integer",
+                      "description" : "The source line number."
+                    },
+                    "format" : {
+                      "maximum" : 128,
+                      "minimum" : -127,
+                      "type" : "integer",
+                      "description" : "Control to show full or partial module, package, and class names.",
+                      "default" : "0"
+                    }
+                  }
+                },
+                "default" : "new StackTraceElement[0]"
+              },
+              "suppressedExceptions" : {
+                "type" : "array",
+                "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+                "items" : {
+                  "type" : "object",
+                  "properties" : { },
+                  "description" : "java.lang.Throwable"
+                },
+                "default" : "Collections.emptyList()"
+              }
+            },
+            "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+            "default" : "this"
+          },
+          "stackTrace" : {
+            "type" : "array",
+            "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "classLoaderName" : {
+                  "type" : "string",
+                  "description" : "The name of the class loader."
+                },
+                "moduleName" : {
+                  "type" : "string",
+                  "description" : "The module name."
+                },
+                "moduleVersion" : {
+                  "type" : "string",
+                  "description" : "The module version."
+                },
+                "declaringClass" : {
+                  "type" : "string",
+                  "description" : "The declaring class."
+                },
+                "methodName" : {
+                  "type" : "string",
+                  "description" : "The method name."
+                },
+                "fileName" : {
+                  "type" : "string",
+                  "description" : "The source file name."
+                },
+                "lineNumber" : {
+                  "type" : "integer",
+                  "description" : "The source line number."
+                },
+                "format" : {
+                  "maximum" : 128,
+                  "minimum" : -127,
+                  "type" : "integer",
+                  "description" : "Control to show full or partial module, package, and class names.",
+                  "default" : "0"
+                }
+              }
+            },
+            "default" : "new StackTraceElement[0]"
+          },
+          "suppressedExceptions" : {
+            "type" : "array",
+            "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "detailMessage" : {
+                  "type" : "string",
+                  "description" : "Specific details about the Throwable.  For example, for\n{@code FileNotFoundException}, this contains the name of\nthe file that could not be found."
+                },
+                "cause" : {
+                  "type" : "object",
+                  "properties" : { },
+                  "description" : "The throwable that caused this throwable to get thrown, or null if this\nthrowable was not caused by another throwable, or if the causative\nthrowable is unknown.  If this field is equal to this throwable itself,\nit indicates that the cause of this throwable has not yet been\ninitialized.",
+                  "default" : "this"
+                },
+                "stackTrace" : {
+                  "type" : "array",
+                  "description" : "The stack trace, as returned by{@link #getStackTrace()}.\n\nThe field is initialized to a zero-length array.  A{@code\n    * null} value of this field indicates subsequent calls to{@link\n    * #setStackTrace(StackTraceElement[])} and{@link\n    * #fillInStackTrace()} will be no-ops.",
+                  "items" : {
+                    "type" : "object",
+                    "properties" : {
+                      "classLoaderName" : {
+                        "type" : "string",
+                        "description" : "The name of the class loader."
+                      },
+                      "moduleName" : {
+                        "type" : "string",
+                        "description" : "The module name."
+                      },
+                      "moduleVersion" : {
+                        "type" : "string",
+                        "description" : "The module version."
+                      },
+                      "declaringClass" : {
+                        "type" : "string",
+                        "description" : "The declaring class."
+                      },
+                      "methodName" : {
+                        "type" : "string",
+                        "description" : "The method name."
+                      },
+                      "fileName" : {
+                        "type" : "string",
+                        "description" : "The source file name."
+                      },
+                      "lineNumber" : {
+                        "type" : "integer",
+                        "description" : "The source line number."
+                      },
+                      "format" : {
+                        "maximum" : 128,
+                        "minimum" : -127,
+                        "type" : "integer",
+                        "description" : "Control to show full or partial module, package, and class names.",
+                        "default" : "0"
+                      }
+                    }
+                  },
+                  "default" : "new StackTraceElement[0]"
+                },
+                "suppressedExceptions" : {
+                  "type" : "array",
+                  "description" : "The list of suppressed exceptions, as returned by{@link\n    * #getSuppressed()}.  The list is initialized to a zero-element\nunmodifiable sentinel list.  When a serialized Throwable is\nread in, if the{@code suppressedExceptions} field points to a\nzero-element list, the field is reset to the sentinel value.",
+                  "items" : {
+                    "type" : "object",
+                    "properties" : { },
+                    "description" : "java.lang.Throwable"
+                  },
+                  "default" : "Collections.emptyList()"
+                }
+              },
+              "description" : "java.lang.Throwable"
+            },
+            "default" : "Collections.emptyList()"
+          }
+        },
+        "description" : "Store an error before the handler is initialized.",
+        "nullable" : true
+      },
+      "java.lang.Runnable" : {
+        "type" : "object",
+        "properties" : { },
+        "description" : "java.lang.Runnable"
+      },
+      "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DefaultCallback" : {
+        "type" : "object",
+        "properties" : {
+          "delegates" : {
+            "type" : "array",
+            "description" : "",
+            "items" : {
+              "type" : "object",
+              "properties" : { },
+              "description" : "java.lang.Runnable"
+            },
+            "default" : "new ArrayList<>(1)"
+          }
+        },
+        "description" : "",
+        "default" : "new DefaultCallback()"
+      },
+      "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.ErrorCallback" : {
+        "type" : "object",
+        "properties" : { },
+        "description" : "",
+        "default" : "new ErrorCallback()"
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: agenx-drawio-app
+  profiles:
+    active: dev
