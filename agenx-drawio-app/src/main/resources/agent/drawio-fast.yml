@@ -51,3 +51,5 @@
                   The entire response must be valid XML only.
             runner:
               agent-name: DrawioDirectXmlAgent
+              plugin-name-list:
+                - myLogPlugin

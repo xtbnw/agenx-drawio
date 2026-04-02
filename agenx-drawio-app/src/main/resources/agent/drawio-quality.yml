@@ -100,3 +100,5 @@
                   - XmlRevisionAgent
             runner:
               agent-name: DrawioReviewWorkflow
+              plugin-name-list:
+                - myLogPlugin

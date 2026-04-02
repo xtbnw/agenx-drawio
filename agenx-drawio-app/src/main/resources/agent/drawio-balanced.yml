@@ -80,3 +80,5 @@
                   - DiagramXmlAgent
             runner:
               agent-name: DrawioDualWorkflow
+              plugin-name-list:
+                - myLogPlugin

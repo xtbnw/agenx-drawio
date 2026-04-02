@@ -126,3 +126,5 @@
                   - StableXmlRenderAgent
             runner:
               agent-name: StableFinalWorkflow
+              plugin-name-list:
+                - myLogPlugin
