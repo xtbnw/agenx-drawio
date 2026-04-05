@@ -38,6 +38,15 @@
                   4. Every visible node must be an <mxCell> with vertex="1" and geometry.
                   5. Every connector must be an <mxCell> with edge="1", source, target, and geometry.
                   6. Prefer a readable, complete structure.
+                  7. Keep the main flow visually clear and minimize node overlaps, edge overlaps, and line crossings.
+                  8. Keep same-type logical nodes visually consistent across shapes and colors.
+                  9. Use this default semantic style mapping unless the user requests another convention:
+                     start/end = green ellipse
+                     process = blue rounded rectangle
+                     decision = yellow diamond
+                     data store = purple or slate cylinder
+                     note = light neutral note
+                     container = light neutral container
                 output-key: initial_drawio_xml
               - name: XmlReviewAgent
                 description: Reviews the XML draft for structural and diagram quality issues.
@@ -52,6 +61,9 @@
                   - Whether it is likely importable by draw.io
                   - Missing root cells, missing geometry, bad ids, missing source/target
                   - Layout readability and completeness against the user request
+                  - Whether node alignment, spacing, and grouping keep the structure clear
+                  - Whether edges are routed to minimize crossings and avoid obvious clutter
+                  - Whether similar logical node types use consistent shapes and colors
                   - Whether the XML contains extra non-XML text or unstable style usage
 
                   Output plain text only using this format:
@@ -89,6 +101,8 @@
                   4. Preserve useful parts of the original draft while fixing the issues named in the review.
                   5. Include all required cells, ids, source/target links, and geometry.
                   6. Fix the review issues directly rather than producing a fresh unrelated layout.
+                  7. Improve readability by reducing crossings, overlaps, and inconsistent spacing where possible.
+                  8. Normalize same-type nodes to a consistent semantic style mapping unless the original request says otherwise.
                 output-key: final_drawio_xml
             agent-workflows:
               - type: sequential

@@ -46,6 +46,16 @@
                   - Include node ids, labels, types, parent-child relationships, and approximate coordinates or clear relative placement.
                   - Keep the structure readable and import-friendly.
                   - Prefer a conservative structure over speculative complexity.
+                  - Prioritize layouts that keep the main flow clear, aligned, and easy to scan.
+                  - Explicitly place nodes to reduce line crossings and avoid edge-node overlaps.
+                  - Keep same-type nodes visually consistent and mention the style mapping in STYLE_GUIDELINES.
+                  - Use this default style mapping unless the user requests a different semantic convention.
+                  - start/end = green ellipse
+                  - process = blue rounded rectangle
+                  - decision = yellow diamond
+                  - data store = purple or slate cylinder
+                  - note = light neutral note
+                  - container = light neutral swimlane or grouped container
                 output-key: diagram_blueprint
               - name: DiagramXmlAgent
                 description: Renders draw.io XML strictly from the diagram blueprint.
@@ -67,6 +77,13 @@
                   7. Every edge must be an <mxCell> with edge="1", source, target, and a matching <mxGeometry relative="1" as="geometry"/>.
                   8. Use clear spacing and standard draw.io styles.
                   9. If the blueprint is incomplete, fill only the minimum missing details needed to produce valid XML.
+
+                  Layout and style rules:
+                  - Preserve a clear primary reading direction from the blueprint.
+                  - Use orthogonal connectors and route them to minimize crossings.
+                  - Keep nodes aligned into clean rows or columns where possible.
+                  - Maintain consistent visual styles for the same logical node types across the whole diagram.
+                  - Apply the blueprint's STYLE_GUIDELINES faithfully instead of inventing extra color variations.
 
                   Final rule:
                   The entire response must be valid XML only.

@@ -41,27 +41,32 @@ Generate XML that draw.io can import directly while preserving a clean structure
 - Sequence-like diagrams: actors left-to-right, interactions top-to-bottom.
 - Mind maps: center the root topic and branch outward consistently.
 - Avoid overlaps and leave whitespace between groups.
+- Keep a single dominant reading direction and avoid unnecessary backtracking edges.
+- Prefer aligned rows or columns for sibling nodes.
+- Prefer orthogonal connectors and route them around groups to reduce crossings.
+- For complex diagrams, split the graph into clear regions or containers before adding edges.
 
 ## Node Patterns
 
 - Start/end:
-  - `ellipse;whiteSpace=wrap;html=1;aspect=fixed;`
+  - `ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#D5E8D4;strokeColor=#82B366;fontColor=#1A1A1A;`
 - Process:
-  - `rounded=1;whiteSpace=wrap;html=1;`
+  - `rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontColor=#1A1A1A;`
 - Decision:
-  - `rhombus;whiteSpace=wrap;html=1;`
+  - `rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#1A1A1A;`
 - Data store:
-  - `shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;`
+  - `shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontColor=#1A1A1A;`
 - Note:
-  - `shape=note;whiteSpace=wrap;html=1;`
+  - `shape=note;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#1A1A1A;`
 - Container/swimlane:
-  - `swimlane;whiteSpace=wrap;html=1;`
+  - `swimlane;whiteSpace=wrap;html=1;fillColor=#F8F9FA;strokeColor=#B0B7C3;fontColor=#1A1A1A;`
 
 ## Edge Patterns
 
 - Default edge style:
   - `edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;`
 - Use edge labels only when they add information such as conditions, protocols, or message names.
+- Keep edge styles consistent within one diagram; do not mix decorative arrows or random line colors without semantic meaning.
 
 ## Quality Bar
 
@@ -69,4 +74,6 @@ Generate XML that draw.io can import directly while preserving a clean structure
 - Keep labels concise.
 - Escape XML-sensitive characters.
 - Prefer stable, readable geometry over dense packing.
+- Use one consistent style for each logical node type across the entire diagram.
+- If a diagram becomes dense, prefer more whitespace and clearer grouping over compactness.
 - If the user asks for a fun or unusual diagram, preserve correctness first and add variation through layout, grouping, and labeling rather than risky XML tricks.

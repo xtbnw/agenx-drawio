@@ -46,6 +46,20 @@
                   - Flowcharts: top to bottom unless the request strongly suggests another direction.
                   - Architecture diagrams: use containers for subsystems and place services cleanly inside.
                   - Creative or mixed diagrams are allowed, but the final output must still be valid draw.io XML.
+                  - Keep the primary flow on a single dominant axis and avoid unnecessary backtracking lines.
+                  - Prefer orthogonal connectors and route edges around node groups to minimize crossings.
+                  - Leave enough spacing between rows, columns, and containers so nodes and edges do not overlap.
+                  - Align sibling nodes within the same row or column wherever possible.
+
+                  Style rules:
+                  - Keep similar logical node types visually consistent throughout the same diagram.
+                  - Use a limited, unified palette and do not assign random colors to similar nodes.
+                  - Decision nodes must use a yellow diamond style.
+                  - Process nodes must use blue rounded rectangles.
+                  - Start/end nodes should use a consistent green ellipse style.
+                  - Data stores should use a consistent purple or slate cylinder style.
+                  - Notes or annotations should use a consistent light neutral note style.
+                  - Containers should use subtle neutral backgrounds and clear borders, avoiding strong saturated fills.
 
                   Final rule:
                   The entire response must be valid XML only.

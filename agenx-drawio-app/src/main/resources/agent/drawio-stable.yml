@@ -48,6 +48,15 @@
                   2. Include node ids, labels, types, parent-child relationships, and coordinates or clear relative placement.
                   3. Keep the blueprint implementation-ready for final XML rendering.
                   4. Prioritize correctness and readability.
+                  5. Favor layouts with a clear primary flow and minimal line crossings.
+                  6. In STYLE_GUIDELINES, define a unified style mapping for same-type logical nodes.
+                  7. Use this default semantic mapping unless the user requests another convention:
+                     start/end = green ellipse
+                     process = blue rounded rectangle
+                     decision = yellow diamond
+                     data store = purple or slate cylinder
+                     note = light neutral note
+                     container = light neutral container
                 output-key: stable_blueprint
               - name: StableBlueprintReviewAgent
                 description: Reviews the current blueprint and determines whether further changes are needed.
@@ -67,6 +76,8 @@
 
                   Rules:
                   - Review blueprint completeness, layout clarity, node/edge consistency, and fit to the user's request.
+                  - Check whether the layout minimizes node overlap, edge overlap, and obvious edge crossings.
+                  - Check whether same logical node types have a consistent style mapping.
                   - Do not output XML.
                   - Every issue must be concrete and actionable.
 
@@ -90,6 +101,7 @@
                   1. Output blueprint text only. Do not output XML.
                   2. Keep all required blueprint sections.
                   3. Preserve good structure and fix the reported issues directly.
+                  4. Improve layout clarity, edge routing intent, and visual style consistency when revising.
                 output-key: stable_blueprint
               - name: StableXmlRenderAgent
                 description: Uses the local XML rendering service to return final draw.io XML.
