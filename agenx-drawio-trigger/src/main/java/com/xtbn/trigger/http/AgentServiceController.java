@@ -76,7 +76,7 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<CreateSessionResponseDTO> createSession(@RequestBody CreateSessionRequestDTO requestDTO) {
         try {
-            log.info("新会话:调用agent-{},发起人-{},是否刷新会话-{}", requestDTO.getAgentId(), requestDTO.getUserId(), requestDTO.getRefresh());
+            log.info("用户{}发起新会话，调用agent-{}", requestDTO.getUserId(), requestDTO.getAgentId());
             boolean refresh = Boolean.TRUE.equals(requestDTO.getRefresh());
             String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId(), refresh);
 
@@ -107,6 +107,7 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<ChatResponseDTO> chat(@RequestBody ChatRequestDTO requestDTO) {
         try {
+            log.info("用户{}调用agent-{},会话ID-{}", requestDTO.getUserId(), requestDTO.getAgentId(), requestDTO.getSessionId());
             String sessionId = requestDTO.getSessionId();
             if (sessionId == null || sessionId.isEmpty()) {
                 sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId());
@@ -145,6 +146,7 @@ public class AgentServiceController implements IAgentService {
     @RequestMapping(value = "chat_stream", method = RequestMethod.POST, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Override
     public Flux<ServerSentEvent<Map<String, Object>>> chatStream(@RequestBody ChatRequestDTO requestDTO) {
+        log.info("用户{}调用agent-{},会话ID-{}", requestDTO.getUserId(), requestDTO.getAgentId(), requestDTO.getSessionId());
         return chatService.handleMessageStream(
                         requestDTO.getAgentId(),
                         requestDTO.getUserId(),
