@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "agenx-drawio-app"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets:
+          - "agenx-drawio-app:9091"
+        labels:
+          app: "agenx-drawio-app"

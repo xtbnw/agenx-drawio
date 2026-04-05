@@ -81,4 +81,7 @@
             runner:
               agent-name: DrawioDualWorkflow
               plugin-name-list:
-                - myLogPlugin
+                - privacyPlugin
+                - governancePlugin
+                - observabilityPlugin
+                - costAccountingPlugin

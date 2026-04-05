@@ -101,4 +101,7 @@
             runner:
               agent-name: DrawioReviewWorkflow
               plugin-name-list:
-                - myLogPlugin
+                - privacyPlugin
+                - governancePlugin
+                - observabilityPlugin
+                - costAccountingPlugin

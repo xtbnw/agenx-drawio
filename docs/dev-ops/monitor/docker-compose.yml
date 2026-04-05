@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: bitnami/prometheus:2.47.2
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - my-network
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    restart: always
+    depends_on:
+      - prometheus
+    ports:
+      - "4000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    external: true

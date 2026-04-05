@@ -52,4 +52,7 @@
             runner:
               agent-name: DrawioDirectXmlAgent
               plugin-name-list:
-                - myLogPlugin
+                - privacyPlugin
+                - governancePlugin
+                - observabilityPlugin
+                - costAccountingPlugin

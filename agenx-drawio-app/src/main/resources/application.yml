@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: agenx-drawio-app
   config:
     name: agenx-drawio-app
   profiles:

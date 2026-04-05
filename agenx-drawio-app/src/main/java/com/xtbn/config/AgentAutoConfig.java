@@ -5,6 +5,10 @@ import com.google.adk.memory.InMemoryMemoryService;
 import com.google.adk.sessions.BaseSessionService;
 import com.google.adk.sessions.InMemorySessionService;
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginCostProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginObservabilityProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
 import com.xtbn.domain.agent.service.assmble.component.mcp.server.DrawioXmlToolService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +26,13 @@ import java.util.ArrayList;
 
 @Slf4j
 @Configuration
-@EnableConfigurationProperties(AgentAutoConfigProperties.class)
+@EnableConfigurationProperties({
+        AgentAutoConfigProperties.class,
+        PluginObservabilityProperties.class,
+        PluginGovernanceProperties.class,
+        PluginPrivacyProperties.class,
+        PluginCostProperties.class
+})
 public class AgentAutoConfig implements ApplicationListener<ApplicationReadyEvent> {
     @Resource
     private AgentAutoConfigProperties agentAutoConfigProperties;

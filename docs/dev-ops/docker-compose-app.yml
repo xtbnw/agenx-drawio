@@ -1,27 +1,30 @@
-# /usr/local/bin/docker-compose -f /docs/dev-ops/environment/environment-docker-compose-2.4.yml up -d
-version: '3.8'
-# docker-compose -f docker-compose-app.yml up -d
-# 你需要修改system为你自身系统的仓库名
+version: "3.8"
+
 services:
-  agenx-drawio:
-    image: system/agenx-drawio:1.0
-    container_name: agenx-drawio
-    restart: on-failure
+  agenx-drawio-app:
+    image: agenx-drawio-app:latest
+    container_name: agenx-drawio-app
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8091
+      MANAGEMENT_SERVER_PORT: 9091
+      JAVA_OPTS: "-Xms512m -Xmx1024m"
+      AI_API_KEY: "${AI_API_KEY}"
+      AI_API_BASE_URL: "${AI_API_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/}"
+      AI_COMPLETIONS_PATH: "${AI_COMPLETIONS_PATH:-chat/completions}"
+      BAIDU_SEARCH_BASE_URI: "${BAIDU_SEARCH_BASE_URI:-http://appbuilder.baidu.com/v2/ai_search/mcp/}"
+      BAIDU_SEARCH_API_KEY: "${BAIDU_SEARCH_API_KEY:-}"
     ports:
       - "8091:8091"
-    environment:
-      - TZ=PRC
-      - SERVER_PORT=8091
+    expose:
+      - "9091"
     volumes:
-      - ./log:/data/log
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - ./data/log:/data/log
     networks:
       - my-network
 
 networks:
   my-network:
-    driver: bridge
+    external: true

@@ -1,5 +1,5 @@
 server:
-  port: 8091
+  port: ${APP_PORT:8091}
 
 # 线程池配置
 thread:
@@ -46,3 +46,41 @@ logging:
   level:
     root: info
   config: classpath:logback-spring.xml
+
+management:
+  server:
+    port: ${PROMETHEUS_PORT:9091}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+agent:
+  plugin:
+    observability:
+      enabled: true
+    governance:
+      enabled: true
+      user-rate-limit-per-second: 5
+      user-concurrency-limit: 3
+      default-user-quota-per-day: 1000
+      blacklist: []
+      breaker:
+        enabled: false
+        failure-threshold: 5
+        open-seconds: 60
+    privacy:
+      enabled: true
+      mask-phone: true
+      mask-id-card: true
+      mask-token: true
+      replace-text: "***"
+    cost:
+      enabled: true
+      model-pricing:
+        "glm-4.7":
+          input-per-1k: 0.003
+          output-per-1k: 0.014

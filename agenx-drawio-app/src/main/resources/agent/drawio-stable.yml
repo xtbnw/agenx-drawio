@@ -127,4 +127,7 @@
             runner:
               agent-name: StableFinalWorkflow
               plugin-name-list:
-                - myLogPlugin
+                - privacyPlugin
+                - governancePlugin
+                - observabilityPlugin
+                - costAccountingPlugin
