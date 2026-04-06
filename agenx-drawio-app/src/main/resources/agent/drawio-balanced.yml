@@ -21,6 +21,9 @@
                     base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
                     sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
                     request-timeout: 5
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
             agents:
               - name: DiagramStructureAgent
                 description: Analyzes the request and defines the diagram structure.
@@ -28,6 +31,10 @@
                   You are a draw.io diagram structure analyst.
 
                   Convert the user's request into a precise blueprint for a draw.io diagram.
+                  Before writing the blueprint, identify the most likely diagram type and use the best matching draw.io skill.
+                  If the user explicitly asks for a flowchart, sequence diagram, use case diagram, or PRD-based diagram, you must follow the matching skill first.
+                  If the user does not specify the diagram type, infer it from the request and prefer the most relevant specialized skill.
+                  If the request cannot be classified with high confidence, fall back to the generic drawio-xml-designer skill.
                   Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
                   Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
 
@@ -45,6 +52,9 @@
                   - Be concrete enough that another agent can render draw.io XML without asking questions.
                   - Include node ids, labels, types, parent-child relationships, and approximate coordinates or clear relative placement.
                   - Keep the structure readable and import-friendly.
+                  - Sequence diagrams must preserve participant order, message order, and returns as explicit blueprint semantics.
+                  - Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations.
+                  - PRD-based requests must first extract roles, goals, modules, flows, and dependencies before selecting a diagram shape.
                   - Prefer a conservative structure over speculative complexity.
                   - Prioritize layouts that keep the main flow clear, aligned, and easy to scan.
                   - Explicitly place nodes to reduce line crossings and avoid edge-node overlaps.

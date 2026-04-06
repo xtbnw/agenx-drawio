@@ -1,3 +1,8 @@
+---
+name: drawio-xml-designer
+description: General-purpose draw.io XML guidance for requests that do not fit a more specialized diagram skill.
+---
+
 # Draw.io XML Designer
 
 Use this skill when the user wants a diagram that should be rendered as draw.io XML.

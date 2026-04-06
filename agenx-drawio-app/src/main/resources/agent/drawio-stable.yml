@@ -23,12 +23,20 @@
                     base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
                     sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
                     request-timeout: 5
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
             agents:
               - name: StableBlueprintGeneratorAgent
                 description: Generates the first diagram blueprint.
                 instruction: |
                   You are a draw.io diagram blueprint generation agent in an workflow.
                   Generate the first blueprint from the user's request.
+                  Before writing the blueprint, identify the most likely diagram type and use the best matching draw.io skill.
+                  If the user explicitly asks for a flowchart, sequence diagram, use case diagram, or PRD-based diagram, you must follow the matching skill first.
+                  If the user does not specify the diagram type, infer it from the request and prefer the most relevant specialized skill.
+                  If the request cannot be classified with high confidence, fall back to the generic drawio-xml-designer skill.
+                  In this mode, the skill output should help you produce a more accurate structured blueprint and diagram semantics, not hand-written XML.
 
                   Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
                   Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
@@ -50,7 +58,10 @@
                   4. Prioritize correctness and readability.
                   5. Favor layouts with a clear primary flow and minimal line crossings.
                   6. In STYLE_GUIDELINES, define a unified style mapping for same-type logical nodes.
-                  7. Use this default semantic mapping unless the user requests another convention:
+                  7. Sequence diagrams must preserve participant order, message order, and returns as explicit blueprint semantics.
+                  8. Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations.
+                  9. PRD-based requests must first extract roles, goals, modules, key flows, and dependencies before selecting a diagram shape.
+                  10. Use this default semantic mapping unless the user requests another convention:
                      start/end = green ellipse
                      process = blue rounded rectangle
                      decision = yellow diamond

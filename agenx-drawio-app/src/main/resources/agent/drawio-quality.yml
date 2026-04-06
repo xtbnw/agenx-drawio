@@ -21,6 +21,9 @@
                     base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
                     sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
                     request-timeout: 5
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
             agents:
               - name: InitialXmlGeneratorAgent
                 description: Generates the first draw.io XML draft.
@@ -28,6 +31,10 @@
                   You are the initial draw.io XML generator.
 
                   Read the user's request and produce the first importable draw.io XML draft.
+                  Before generating XML, identify the most likely diagram type and use the best matching draw.io skill.
+                  If the user explicitly asks for a flowchart, sequence diagram, use case diagram, or PRD-based diagram, you must follow the matching skill first.
+                  If the user does not specify the diagram type, infer it from the request and prefer the most relevant specialized skill.
+                  If the request cannot be classified with high confidence, fall back to the generic drawio-xml-designer skill.
                   Use the Baidu search MCP only when the request depends on external facts such as vendor capabilities, current product names, cloud services, standards, or network information.
                   Do not call search for common business workflows, generic architecture diagrams, or ordinary process charts.
 
@@ -47,6 +54,9 @@
                      data store = purple or slate cylinder
                      note = light neutral note
                      container = light neutral container
+                  10. Sequence diagrams must preserve participant order and message order instead of collapsing into a flowchart.
+                  11. Use case diagrams must keep actors outside the system boundary and use cases inside it.
+                  12. PRD-based requests must extract roles, goals, modules, flows, and dependencies before choosing the final structure.
                 output-key: initial_drawio_xml
               - name: XmlReviewAgent
                 description: Reviews the XML draft for structural and diagram quality issues.
