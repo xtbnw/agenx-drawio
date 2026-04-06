@@ -2,15 +2,18 @@ package com.xtbn.domain.agent.service.assmble.nodes;
 
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.google.adk.agents.BaseAgent;
+import com.google.adk.memory.BaseMemoryService;
 import com.google.adk.plugins.BasePlugin;
 import com.google.adk.runner.Runner;
+import com.google.adk.sessions.BaseSessionService;
 import com.google.common.collect.ImmutableList;
 import com.xtbn.domain.agent.adapter.port.registry.IBeanRegistry;
-import com.xtbn.domain.agent.adapter.repository.ISharedRunnerComponentRepository;
 import com.xtbn.domain.agent.model.entity.AssembleCommandEntity;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
 import com.xtbn.domain.agent.service.assmble.AbstractSupportNode;
+import com.xtbn.domain.agent.service.assmble.component.memory.MemoryService;
+import com.xtbn.domain.agent.service.assmble.component.session.SessionService;
 import com.xtbn.domain.agent.service.assmble.factory.DefaultAssembleFactory;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
@@ -30,7 +33,9 @@ public class RunnerNode extends AbstractSupportNode {
     @Resource
     private IBeanRegistry beanRegistry;
     @Resource
-    private ISharedRunnerComponentRepository sharedRunnerComponentService;
+    private SessionService sessionService;
+    @Resource
+    private MemoryService memoryService;
 
     @Override
     protected AgentRegisterVO doApply(AssembleCommandEntity requestParameter, DefaultAssembleFactory.DynamicContext dynamicContext) throws Exception {
@@ -86,8 +91,8 @@ public class RunnerNode extends AbstractSupportNode {
         return Runner.builder()
                 .agent(baseAgent)
                 .appName(APP_NAME)
-                .sessionService(sharedRunnerComponentService.getSharedSessionService())
-                .memoryService(sharedRunnerComponentService.getSharedMemoryService())
+                .sessionService(sessionService)
+                .memoryService(memoryService)
                 .plugins(plugins)
                 .build();
     }

@@ -1,4 +1,4 @@
-package com.xtbn.infrastructure.dao;
+package com.xtbn.domain.agent.service.assmble.component.session;
 
 import com.alibaba.fastjson.JSON;
 import com.google.adk.events.Event;
@@ -7,8 +7,9 @@ import com.google.adk.sessions.GetSessionConfig;
 import com.google.adk.sessions.ListEventsResponse;
 import com.google.adk.sessions.ListSessionsResponse;
 import com.google.adk.sessions.Session;
-import com.xtbn.infrastructure.dao.po.AgentEventRecordPO;
-import com.xtbn.infrastructure.dao.po.AgentSessionRecordPO;
+import com.xtbn.domain.agent.adapter.repository.ISessionRepository;
+import com.xtbn.domain.agent.model.entity.StoredEventEntity;
+import com.xtbn.domain.agent.model.entity.StoredSessionEntity;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class DatabaseSessionService implements BaseSessionService {
+public class SessionService implements BaseSessionService {
 
     public static final String STATE_AGENT_ID = "agentId";
     public static final String STATE_TITLE = "title";
@@ -39,7 +40,7 @@ public class DatabaseSessionService implements BaseSessionService {
     public static final String STATE_UPDATED_AT = "updatedAt";
     public static final String STATE_LAST_MESSAGE_AT = "lastMessageAt";
 
-    private final DatabaseSessionStoreRepository repository;
+    private final ISessionRepository repository;
 
     @Override
     @Transactional
@@ -89,7 +90,7 @@ public class DatabaseSessionService implements BaseSessionService {
     @Override
     public Single<ListEventsResponse> listEvents(String appName, String userId, String sessionId) {
         return Single.fromCallable(() -> {
-            AgentSessionRecordPO record = repository.findSession(userId, sessionId)
+            StoredSessionEntity record = repository.findSession(userId, sessionId)
                     .filter(item -> appName.equals(item.getAppName()))
                     .orElse(null);
             if (record == null) {
@@ -106,7 +107,7 @@ public class DatabaseSessionService implements BaseSessionService {
     public Single<Event> appendEvent(Session session, Event event) {
         return Single.fromCallable(() -> {
             long now = Instant.now().toEpochMilli();
-            AgentEventRecordPO record = new AgentEventRecordPO();
+            StoredEventEntity record = new StoredEventEntity();
             record.setSessionId(session.id());
             record.setEventId(event.id());
             record.setInvocationId(event.invocationId());
@@ -122,7 +123,7 @@ public class DatabaseSessionService implements BaseSessionService {
             record.setCreatedAt(now);
             repository.appendEvent(record);
 
-            AgentSessionRecordPO sessionRecord = repository.findSession(session.id()).orElse(null);
+            StoredSessionEntity sessionRecord = repository.findSession(session.id()).orElse(null);
             if (sessionRecord != null) {
                 Map<String, Object> state = parseState(sessionRecord.getStateJson());
                 updateSessionMetadata(sessionRecord, state, event, now);
@@ -140,27 +141,19 @@ public class DatabaseSessionService implements BaseSessionService {
         });
     }
 
-    public List<AgentSessionRecordPO> listUserSessions(String userId) {
-        return repository.listSessionsByUserId(userId);
-    }
-
-    public Optional<AgentSessionRecordPO> findUserSession(String userId, String sessionId) {
-        return repository.findSession(userId, sessionId);
-    }
-
-    public Session toSession(AgentSessionRecordPO record, Optional<GetSessionConfig> config) {
+    public Session toSession(StoredSessionEntity record, Optional<GetSessionConfig> config) {
         return toSession(record, config, true);
     }
 
-    public Session toSession(AgentSessionRecordPO record, Optional<GetSessionConfig> config, boolean includeEvents) {
+    public Session toSession(StoredSessionEntity record, Optional<GetSessionConfig> config, boolean includeEvents) {
         List<Event> events = includeEvents ? loadEvents(record, config) : List.of();
         Map<String, Object> state = enrichState(record);
         long updatedAt = record.getUpdatedAt() == null ? record.getLastMessageAt() : record.getUpdatedAt();
         return buildSession(record.getAppName(), record.getUserId(), record.getSessionId(), state, events, updatedAt);
     }
 
-    private List<Event> loadEvents(AgentSessionRecordPO record, Optional<GetSessionConfig> config) {
-        List<AgentEventRecordPO> eventRecords = repository.listEvents(record.getSessionId());
+    private List<Event> loadEvents(StoredSessionEntity record, Optional<GetSessionConfig> config) {
+        List<StoredEventEntity> eventRecords = repository.listEvents(record.getSessionId());
         List<Event> events = eventRecords.stream()
                 .map(item -> Event.fromJson(item.getEventJson()))
                 .sorted(Comparator.comparingLong(Event::timestamp))
@@ -203,7 +196,7 @@ public class DatabaseSessionService implements BaseSessionService {
                 .build();
     }
 
-    private Map<String, Object> enrichState(AgentSessionRecordPO record) {
+    private Map<String, Object> enrichState(StoredSessionEntity record) {
         Map<String, Object> state = parseState(record.getStateJson());
         state.put(STATE_AGENT_ID, record.getAgentId());
         state.put(STATE_TITLE, record.getTitle());
@@ -227,7 +220,7 @@ public class DatabaseSessionService implements BaseSessionService {
         return new LinkedHashMap<>();
     }
 
-    private void updateSessionMetadata(AgentSessionRecordPO sessionRecord, Map<String, Object> state, Event event, long now) {
+    private void updateSessionMetadata(StoredSessionEntity sessionRecord, Map<String, Object> state, Event event, long now) {
         String displayText = normalizeContent(event.stringifyContent());
         boolean visible = isVisibleHistoryEvent(event, displayText);
 

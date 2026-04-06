@@ -1,4 +1,4 @@
-package com.xtbn.infrastructure.dao;
+package com.xtbn.domain.agent.service.assmble.component.memory;
 
 import com.google.adk.memory.BaseMemoryService;
 import com.google.adk.memory.MemoryEntry;
@@ -6,7 +6,8 @@ import com.google.adk.memory.SearchMemoryResponse;
 import com.google.adk.sessions.Session;
 import com.google.genai.types.Content;
 import com.google.genai.types.Part;
-import com.xtbn.infrastructure.dao.po.AgentMemoryRecordPO;
+import com.xtbn.domain.agent.adapter.repository.IMemoryRepository;
+import com.xtbn.domain.agent.model.entity.StoredMemoryEntity;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import lombok.RequiredArgsConstructor;
@@ -18,15 +19,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class DatabaseMemoryService implements BaseMemoryService {
+public class MemoryService implements BaseMemoryService {
 
-    private final DatabaseSessionStoreRepository repository;
+    private final IMemoryRepository repository;
 
     @Override
     public Completable addSessionToMemory(Session session) {
         return Completable.fromAction(() -> {
             long now = Instant.now().toEpochMilli();
-            AgentMemoryRecordPO record = new AgentMemoryRecordPO();
+            StoredMemoryEntity record = new StoredMemoryEntity();
             record.setAppName(session.appName());
             record.setUserId(session.userId());
             record.setSessionId(session.id());

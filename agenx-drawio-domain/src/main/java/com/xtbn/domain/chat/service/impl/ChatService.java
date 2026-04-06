@@ -1,12 +1,12 @@
 package com.xtbn.domain.chat.service.impl;
 
 import com.google.adk.events.Event;
+import com.google.adk.sessions.BaseSessionService;
 import com.google.adk.runner.Runner;
 import com.google.adk.sessions.Session;
 import com.google.genai.types.Content;
 import com.google.genai.types.Part;
 import com.xtbn.domain.agent.adapter.port.registry.IBeanRegistry;
-import com.xtbn.domain.agent.adapter.repository.ISharedRunnerComponentRepository;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
@@ -55,7 +55,7 @@ public class ChatService implements IChatService {
     @Resource
     private AgentAutoConfigProperties agentAutoConfigProperties;
     @Resource
-    private ISharedRunnerComponentRepository sharedRunnerComponentRepository;
+    private BaseSessionService sessionService;
 
     @Override
     public List<AgentConfigVO.RootAgent> queryAgentConfigList() {
@@ -171,7 +171,7 @@ public class ChatService implements IChatService {
 
     @Override
     public List<ChatSessionVO> querySessionList(String userId) {
-        return sharedRunnerComponentRepository.getSharedSessionService()
+        return sessionService
                 .listSessions(APP_NAME, userId)
                 .map(response -> response.sessions().stream()
                         .map(this::toSessionVO)
@@ -182,7 +182,7 @@ public class ChatService implements IChatService {
 
     @Override
     public ChatSessionDetailVO querySessionDetail(String userId, String sessionId) {
-        Session session = sharedRunnerComponentRepository.getSharedSessionService()
+        Session session = sessionService
                 .getSession(APP_NAME, userId, sessionId, Optional.empty())
                 .blockingGet();
 
