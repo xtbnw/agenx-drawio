@@ -7,8 +7,14 @@ import com.xtbn.api.dto.ChatRequestDTO;
 import com.xtbn.api.dto.ChatResponseDTO;
 import com.xtbn.api.dto.CreateSessionRequestDTO;
 import com.xtbn.api.dto.CreateSessionResponseDTO;
+import com.xtbn.api.dto.HistoryMessageDTO;
+import com.xtbn.api.dto.SessionDetailResponseDTO;
+import com.xtbn.api.dto.SessionListItemDTO;
+import com.xtbn.api.dto.SwitchSessionRequestDTO;
+import com.xtbn.api.dto.SwitchSessionResponseDTO;
 import com.xtbn.api.response.Response;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
+import com.xtbn.domain.chat.model.valobj.ChatSessionDetailVO;
 import com.xtbn.domain.chat.service.IChatService;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
@@ -19,6 +25,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
@@ -76,7 +83,6 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<CreateSessionResponseDTO> createSession(@RequestBody CreateSessionRequestDTO requestDTO) {
         try {
-            log.info("用户{}发起新会话", requestDTO.getUserId());
             boolean refresh = Boolean.TRUE.equals(requestDTO.getRefresh());
             String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId(), refresh);
 
@@ -107,7 +113,6 @@ public class AgentServiceController implements IAgentService {
     @Override
     public Response<ChatResponseDTO> chat(@RequestBody ChatRequestDTO requestDTO) {
         try {
-            log.info("用户{}调用agent-{},会话ID-{}", requestDTO.getUserId(), requestDTO.getAgentId(), requestDTO.getSessionId());
             String sessionId = requestDTO.getSessionId();
             if (sessionId == null || sessionId.isEmpty()) {
                 sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId());
@@ -146,7 +151,6 @@ public class AgentServiceController implements IAgentService {
     @RequestMapping(value = "chat_stream", method = RequestMethod.POST, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Override
     public Flux<ServerSentEvent<Map<String, Object>>> chatStream(@RequestBody ChatRequestDTO requestDTO) {
-        log.info("用户{}调用agent-{},会话ID-{}", requestDTO.getUserId(), requestDTO.getAgentId(), requestDTO.getSessionId());
         return chatService.handleMessageStream(
                         requestDTO.getAgentId(),
                         requestDTO.getUserId(),
@@ -170,6 +174,103 @@ public class AgentServiceController implements IAgentService {
                 });
     }
 
+    @RequestMapping(value = "session_list", method = RequestMethod.GET)
+    @Override
+    public Response<List<SessionListItemDTO>> querySessionList(@RequestParam("userId") String userId) {
+        try {
+            List<SessionListItemDTO> items = chatService.querySessionList(userId).stream().map(session -> {
+                SessionListItemDTO item = new SessionListItemDTO();
+                item.setSessionId(session.getSessionId());
+                item.setTitle(session.getTitle());
+                item.setAgentId(session.getAgentId());
+                item.setAgentName(session.getAgentName());
+                item.setLastMessagePreview(session.getLastMessagePreview());
+                item.setMessageCount(session.getMessageCount());
+                item.setCreatedAt(session.getCreatedAt());
+                item.setUpdatedAt(session.getUpdatedAt());
+                item.setLastMessageAt(session.getLastMessageAt());
+                return item;
+            }).collect(Collectors.toList());
+
+            return Response.<List<SessionListItemDTO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info(ResponseCode.SUCCESS.getInfo())
+                    .data(items)
+                    .build();
+        } catch (AppException e) {
+            log.error("query session list app error", e);
+            return Response.<List<SessionListItemDTO>>builder()
+                    .code(e.getCode())
+                    .info(e.getInfo())
+                    .build();
+        } catch (Exception e) {
+            log.error("query session list failed", e);
+            return Response.<List<SessionListItemDTO>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info(ResponseCode.UN_ERROR.getInfo())
+                    .build();
+        }
+    }
+
+    @RequestMapping(value = "session_detail", method = RequestMethod.GET)
+    @Override
+    public Response<SessionDetailResponseDTO> querySessionDetail(@RequestParam("userId") String userId, @RequestParam("sessionId") String sessionId) {
+        try {
+            return Response.<SessionDetailResponseDTO>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info(ResponseCode.SUCCESS.getInfo())
+                    .data(toSessionDetailResponse(chatService.querySessionDetail(userId, sessionId)))
+                    .build();
+        } catch (AppException e) {
+            log.error("query session detail app error", e);
+            return Response.<SessionDetailResponseDTO>builder()
+                    .code(e.getCode())
+                    .info(e.getInfo())
+                    .build();
+        } catch (Exception e) {
+            log.error("query session detail failed", e);
+            return Response.<SessionDetailResponseDTO>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info(ResponseCode.UN_ERROR.getInfo())
+                    .build();
+        }
+    }
+
+    @RequestMapping(value = "switch_session", method = RequestMethod.POST)
+    @Override
+    public Response<SwitchSessionResponseDTO> switchSession(@RequestBody SwitchSessionRequestDTO requestDTO) {
+        try {
+            SessionDetailResponseDTO detail = toSessionDetailResponse(chatService.querySessionDetail(requestDTO.getUserId(), requestDTO.getSessionId()));
+            SwitchSessionResponseDTO responseDTO = new SwitchSessionResponseDTO();
+            responseDTO.setSessionId(detail.getSessionId());
+            responseDTO.setTitle(detail.getTitle());
+            responseDTO.setAgentId(detail.getAgentId());
+            responseDTO.setAgentName(detail.getAgentName());
+            responseDTO.setCreatedAt(detail.getCreatedAt());
+            responseDTO.setUpdatedAt(detail.getUpdatedAt());
+            responseDTO.setLastMessageAt(detail.getLastMessageAt());
+            responseDTO.setMessageCount(detail.getMessageCount());
+            responseDTO.setMessages(detail.getMessages());
+            return Response.<SwitchSessionResponseDTO>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info(ResponseCode.SUCCESS.getInfo())
+                    .data(responseDTO)
+                    .build();
+        } catch (AppException e) {
+            log.error("switch session app error", e);
+            return Response.<SwitchSessionResponseDTO>builder()
+                    .code(e.getCode())
+                    .info(e.getInfo())
+                    .build();
+        } catch (Exception e) {
+            log.error("switch session failed", e);
+            return Response.<SwitchSessionResponseDTO>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info(ResponseCode.UN_ERROR.getInfo())
+                    .build();
+        }
+    }
+
     private Map<String, Object> buildStreamEvent(Event event) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("id", event.id());
@@ -181,5 +282,26 @@ public class AgentServiceController implements IAgentService {
         payload.put("errorMessage", event.errorMessage().orElse(null));
         payload.put("timestamp", event.timestamp());
         return payload;
+    }
+
+    private SessionDetailResponseDTO toSessionDetailResponse(ChatSessionDetailVO sessionDetailVO) {
+        SessionDetailResponseDTO responseDTO = new SessionDetailResponseDTO();
+        responseDTO.setSessionId(sessionDetailVO.getSessionId());
+        responseDTO.setTitle(sessionDetailVO.getTitle());
+        responseDTO.setAgentId(sessionDetailVO.getAgentId());
+        responseDTO.setAgentName(sessionDetailVO.getAgentName());
+        responseDTO.setCreatedAt(sessionDetailVO.getCreatedAt());
+        responseDTO.setUpdatedAt(sessionDetailVO.getUpdatedAt());
+        responseDTO.setLastMessageAt(sessionDetailVO.getLastMessageAt());
+        responseDTO.setMessageCount(sessionDetailVO.getMessageCount());
+        responseDTO.setMessages(sessionDetailVO.getMessages().stream().map(message -> {
+            HistoryMessageDTO dto = new HistoryMessageDTO();
+            dto.setMessageId(message.getMessageId());
+            dto.setRole(message.getRole());
+            dto.setContent(message.getContent());
+            dto.setCreatedAt(message.getCreatedAt());
+            return dto;
+        }).collect(Collectors.toList()));
+        return responseDTO;
     }
 }

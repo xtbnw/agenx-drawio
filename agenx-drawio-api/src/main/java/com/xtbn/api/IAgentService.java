@@ -18,4 +18,10 @@ public interface IAgentService {
 
     Flux<ServerSentEvent<Map<String, Object>>> chatStream(ChatRequestDTO requestDTO);
 
+    Response<List<SessionListItemDTO>> querySessionList(String userId);
+
+    Response<SessionDetailResponseDTO> querySessionDetail(String userId, String sessionId);
+
+    Response<SwitchSessionResponseDTO> switchSession(SwitchSessionRequestDTO requestDTO);
+
 }

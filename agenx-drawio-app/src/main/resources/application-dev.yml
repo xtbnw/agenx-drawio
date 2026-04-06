@@ -22,8 +22,8 @@ spring:
       - classpath:agent/drawio-stable.yml
   datasource:
     username: root
-    password: 123456
-    url: jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    password: ${DB_PASSWORD:123456}
+    url: jdbc:mysql://127.0.0.1:13306/agenx_drawio?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
   hikari:
     pool-name: Retail_HikariCP
@@ -42,6 +42,10 @@ spring:
 #  config-location:  classpath:/mybatis/config/mybatis-config.xml
 
 # 日志
+mybatis:
+  mapper-locations: classpath:/mybatis/mapper/*.xml
+  config-location: classpath:/mybatis/config/mybatis-config.xml
+
 logging:
   level:
     root: info
@@ -81,6 +85,6 @@ agent:
     cost:
       enabled: true
       model-pricing:
-        "glm-4.7":
+        "glm-4":
           input-per-1k: 0.003
           output-per-1k: 0.014

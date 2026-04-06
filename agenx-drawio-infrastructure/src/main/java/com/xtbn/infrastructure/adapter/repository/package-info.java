@@ -1,1 +1,0 @@
-package com.xtbn.infrastructure.adapter.repository;

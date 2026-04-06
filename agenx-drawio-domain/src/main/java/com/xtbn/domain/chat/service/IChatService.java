@@ -3,6 +3,8 @@ package com.xtbn.domain.chat.service;
 import com.google.adk.events.Event;
 import com.xtbn.domain.chat.model.entity.ChatCommandEntity;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
+import com.xtbn.domain.chat.model.valobj.ChatSessionDetailVO;
+import com.xtbn.domain.chat.model.valobj.ChatSessionVO;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -25,4 +27,8 @@ public interface IChatService {
     Flux<Event> handleMessageStream(String agentId, String userId, String sessionId, String message);
 
     List<String> handleMessage(ChatCommandEntity chatCommandEntity);
+
+    List<ChatSessionVO> querySessionList(String userId);
+
+    ChatSessionDetailVO querySessionDetail(String userId, String sessionId);
 }

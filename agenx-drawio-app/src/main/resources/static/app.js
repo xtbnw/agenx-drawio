@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const { createElement: h, useEffect, useMemo, useRef, useState } = React;
 
   const API_BASE = "/api/v1";
@@ -20,7 +20,8 @@
     const [agents, setAgents] = useState([]);
     const [selectedAgentId, setSelectedAgentId] = useState(localStorage.getItem(STORAGE_KEYS.agentId) || "");
     const [userId, setUserId] = useState(localStorage.getItem(STORAGE_KEYS.userId) || generateUserId());
-    const [sessionId, setSessionId] = useState("");
+    const [sessionId, setSessionId] = useState(localStorage.getItem(STORAGE_KEYS.sessionId) || "");
+    const [sessions, setSessions] = useState([]);
     const [messages, setMessages] = useState([]);
     const [composerValue, setComposerValue] = useState("");
     const [activePromptId, setActivePromptId] = useState("");
@@ -32,8 +33,8 @@
     const chatScrollRef = useRef(null);
     const textareaRef = useRef(null);
     const userPopoverRef = useRef(null);
-    const sessionCreatingRef = useRef(false);
     const selectedAgent = agents.find((agent) => agent.agentId === selectedAgentId) || null;
+    const activeSession = sessions.find((item) => item.sessionId === sessionId) || null;
 
     useEffect(() => {
       loadAgents();
@@ -41,58 +42,28 @@
 
     useEffect(() => {
       localStorage.setItem(STORAGE_KEYS.userId, userId);
+      refreshSessions(true);
     }, [userId]);
-
-    useEffect(() => {
-      localStorage.removeItem(STORAGE_KEYS.sessionId);
-    }, []);
 
     useEffect(() => {
       if (selectedAgentId) {
         localStorage.setItem(STORAGE_KEYS.agentId, selectedAgentId);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.agentId);
       }
     }, [selectedAgentId]);
 
     useEffect(() => {
-      localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, String(sidebarCollapsed));
-    }, [sidebarCollapsed]);
+      if (sessionId) {
+        localStorage.setItem(STORAGE_KEYS.sessionId, sessionId);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.sessionId);
+      }
+    }, [sessionId]);
 
     useEffect(() => {
-      if (!selectedAgentId || !userId || sessionId || sessionCreatingRef.current) {
-        return;
-      }
-
-      let cancelled = false;
-      sessionCreatingRef.current = true;
-      setStatus({ type: "loading", text: "创建会话中..." });
-
-      createSession(selectedAgentId, userId)
-        .then((nextSessionId) => {
-          if (cancelled) {
-            return;
-          }
-
-          setSessionId(nextSessionId);
-          setStatus({ type: "ready", text: "准备就绪" });
-        })
-        .catch((error) => {
-          if (cancelled) {
-            return;
-          }
-
-          setStatus({ type: "error", text: error.message || "创建会话失败" });
-        })
-        .finally(() => {
-          if (!cancelled) {
-            sessionCreatingRef.current = false;
-          }
-        });
-
-      return () => {
-        cancelled = true;
-        sessionCreatingRef.current = false;
-      };
-    }, [selectedAgentId, userId, sessionId]);
+      localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, String(sidebarCollapsed));
+    }, [sidebarCollapsed]);
 
     useEffect(() => {
       if (chatScrollRef.current) {
@@ -131,6 +102,39 @@
       }
     }
 
+    async function refreshSessions(silent) {
+      if (!userId) {
+        setSessions([]);
+        return;
+      }
+      if (!silent) {
+        setStatus({ type: "loading", text: "加载会话中..." });
+      }
+      try {
+        const result = await requestJson(`${API_BASE}/session_list?userId=${encodeURIComponent(userId)}`);
+        const nextSessions = Array.isArray(result.data) ? result.data : [];
+        setSessions(nextSessions);
+
+        if (sessionId && !messages.length) {
+          const cached = nextSessions.find((item) => item.sessionId === sessionId);
+          if (cached) {
+            await loadSessionDetail(sessionId, true);
+          } else if (!silent) {
+            setSessionId("");
+            setMessages([]);
+          }
+        }
+
+        if (!silent) {
+          setStatus({ type: "ready", text: "已同步历史会话" });
+        }
+      } catch (error) {
+        if (!silent) {
+          setStatus({ type: "error", text: error.message || "加载历史会话失败" });
+        }
+      }
+    }
+
     async function createSession(agentId, nextUserId) {
       const result = await requestJson(`${API_BASE}/create_session`, {
         method: "POST",
@@ -144,47 +148,74 @@
       return result && result.data ? result.data.sessionId || "" : "";
     }
 
+    async function loadSessionDetail(nextSessionId, silent) {
+      if (!nextSessionId) {
+        return;
+      }
+      if (!silent) {
+        setStatus({ type: "loading", text: "加载会话中..." });
+      }
+      const result = await requestJson(`${API_BASE}/session_detail?userId=${encodeURIComponent(userId)}&sessionId=${encodeURIComponent(nextSessionId)}`);
+      const detail = result.data || {};
+      setSessionId(detail.sessionId || nextSessionId);
+      if (detail.agentId) {
+        setSelectedAgentId(detail.agentId);
+      }
+      setMessages((detail.messages || []).map(historyMessageToBubble));
+      if (!silent) {
+        setStatus({ type: "ready", text: "已恢复历史会话" });
+      }
+    }
+
+    async function switchSession(nextSession) {
+      setStatus({ type: "loading", text: "切换会话中..." });
+      try {
+        const result = await requestJson(`${API_BASE}/switch_session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            sessionId: nextSession.sessionId
+          })
+        });
+
+        const detail = result.data || {};
+        setSessionId(detail.sessionId || nextSession.sessionId);
+        setSelectedAgentId(detail.agentId || selectedAgentId);
+        setMessages((detail.messages || []).map(historyMessageToBubble));
+        setStatus({ type: "ready", text: "已切换历史会话" });
+        if (window.innerWidth <= 980) {
+          setSidebarCollapsed(true);
+        }
+      } catch (error) {
+        setStatus({ type: "error", text: error.message || "切换会话失败" });
+      }
+    }
+
     async function startNewSession() {
-      const nextUserId = generateUserId();
-      sessionCreatingRef.current = true;
-      setUserId(nextUserId);
-      setSessionId("");
-      setMessages([]);
-      setUserPopoverOpen(false);
       if (!selectedAgentId) {
-        setStatus({ type: "ready", text: "新会话" });
+        setStatus({ type: "error", text: "请先选择 Agent" });
         return;
       }
 
       setStatus({ type: "loading", text: "创建会话中..." });
       try {
-        const nextSessionId = await createSession(selectedAgentId, nextUserId);
+        const nextSessionId = await createSession(selectedAgentId, userId);
         setSessionId(nextSessionId);
-        setStatus({ type: "ready", text: "新会话" });
+        setMessages([]);
+        setUserPopoverOpen(false);
+        await refreshSessions(true);
+        setStatus({ type: "ready", text: "新会话已创建" });
       } catch (error) {
         setStatus({ type: "error", text: error.message || "创建会话失败" });
-      } finally {
-        sessionCreatingRef.current = false;
       }
     }
 
     async function handleAgentSelect(agentId) {
-      sessionCreatingRef.current = true;
-      if (agentId !== selectedAgentId) {
-        setMessages([]);
-      }
       setSelectedAgentId(agentId);
       setSessionId("");
-      setStatus({ type: "loading", text: "创建会话中..." });
-      try {
-        const nextSessionId = await createSession(agentId, userId);
-        setSessionId(nextSessionId);
-        setStatus({ type: "ready", text: "已切换 Agent" });
-      } catch (error) {
-        setStatus({ type: "error", text: error.message || "创建会话失败" });
-      } finally {
-        sessionCreatingRef.current = false;
-      }
+      setMessages([]);
+      setStatus({ type: "ready", text: "已切换 Agent，发送消息或创建新会话继续" });
       if (window.innerWidth <= 980) {
         setSidebarCollapsed(true);
       }
@@ -227,6 +258,7 @@
         if (!currentSessionId) {
           currentSessionId = await createSession(selectedAgent.agentId, currentUserId);
           setSessionId(currentSessionId);
+          await refreshSessions(true);
         }
 
         try {
@@ -282,6 +314,7 @@
         }
 
         setMessages((prev) => finalizeAssistantWorkflowMessage(prev, assistantMessage.id));
+        await refreshSessions(true);
         setStatus({ type: "ready", text: "已完成" });
       } catch (error) {
         setMessages((prev) => updateMessage(prev, assistantMessage.id, {
@@ -302,7 +335,9 @@
         h(Sidebar, {
           collapsed: sidebarCollapsed,
           agents,
+          sessions,
           selectedAgentId,
+          sessionId,
           userId,
           userInitial,
           userPopoverOpen,
@@ -310,10 +345,12 @@
           onToggleSidebar: () => setSidebarCollapsed((prev) => !prev),
           onNewSession: startNewSession,
           onSelectAgent: handleAgentSelect,
+          onSelectSession: switchSession,
           onToggleUserPopover: () => setUserPopoverOpen((prev) => !prev)
         }),
         h(MainArea, {
           selectedAgent,
+          activeSession,
           messages,
           status,
           composerValue,
@@ -371,6 +408,27 @@
               )
         )
       ),
+      h("div", { className: "history-section" },
+        h("div", { className: "agent-section-title" }, "历史会话"),
+        h("div", { className: "history-list" },
+          props.sessions.length
+            ? props.sessions.map((session) => h("button", {
+                key: session.sessionId,
+                className: `history-btn ${session.sessionId === props.sessionId ? "active" : ""}`,
+                type: "button",
+                onClick: () => props.onSelectSession(session),
+                title: session.title || session.sessionId
+              },
+                h("div", { className: "history-head" },
+                  h("span", { className: "history-title" }, session.title || "新会话"),
+                  h("span", { className: "history-time" }, formatDateTime(session.lastMessageAt || session.updatedAt))
+                ),
+                h("div", { className: "history-agent" }, session.agentName || session.agentId || "未知 Agent"),
+                h("div", { className: "history-preview" }, session.lastMessagePreview || "暂无消息")
+              ))
+            : h("div", { className: "history-empty" }, "暂无历史会话")
+        )
+      ),
       h("div", { className: "sidebar-footer", ref: props.userPopoverRef },
         props.userPopoverOpen && h("div", { className: "user-popover" },
           h("p", { className: "popover-label" }, "Current userId"),
@@ -395,7 +453,10 @@
   function MainArea(props) {
     return h("main", { className: "main-shell" },
       h("header", { className: "chat-header" },
-        h("div", { className: "chat-title" }, props.selectedAgent ? (props.selectedAgent.agentName || props.selectedAgent.agentId) : "请选择 Agent"),
+        h("div", null,
+          h("div", { className: "chat-title" }, props.selectedAgent ? (props.selectedAgent.agentName || props.selectedAgent.agentId) : "请选择 Agent"),
+          props.activeSession ? h("div", { className: "chat-subtitle" }, props.activeSession.title || "当前会话") : null
+        ),
         h("div", { className: `chat-status ${props.status.type}` }, props.status.text)
       ),
       h("section", { className: "chat-panel" },
@@ -525,12 +586,8 @@
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
+    if (!response.ok || !response.body) {
       throw new Error(`HTTP ${response.status}`);
-    }
-
-    if (!response.body) {
-      throw new Error("当前浏览器不支持流式读取");
     }
 
     const reader = response.body.getReader();
@@ -631,18 +688,6 @@
     return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   }
 
-  function mergeStreamText(previous, incoming) {
-    if (!previous) {
-      return incoming;
-    }
-
-    if (incoming.startsWith(previous)) {
-      return incoming;
-    }
-
-    return previous + incoming;
-  }
-
   function finalizeStreamContent(content) {
     if (typeof content === "string" && content.trim()) {
       return content.trim();
@@ -726,6 +771,17 @@
     };
   }
 
+  function historyMessageToBubble(message) {
+    return {
+      id: message.messageId || `history-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      role: message.role === "user" ? "user" : "assistant",
+      content: message.content || "",
+      loading: false,
+      timestamp: new Date(message.createdAt || Date.now()),
+      workflowSteps: []
+    };
+  }
+
   function autoResizeTextarea(textarea) {
     if (!textarea) {
       return;
@@ -749,6 +805,18 @@
       hour: "2-digit",
       minute: "2-digit"
     }).format(date);
+  }
+
+  function formatDateTime(value) {
+    if (!value) {
+      return "";
+    }
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
   }
 
   function generateUserId() {

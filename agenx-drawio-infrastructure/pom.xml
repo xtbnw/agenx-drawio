@@ -14,13 +14,15 @@
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+        </dependency>
 
-        <!-- 系统模块 -->
         <dependency>
             <groupId>com.xtbn</groupId>
             <artifactId>agenx-drawio-domain</artifactId>
