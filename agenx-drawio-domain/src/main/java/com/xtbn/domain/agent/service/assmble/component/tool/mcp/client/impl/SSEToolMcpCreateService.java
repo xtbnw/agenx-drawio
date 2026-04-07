@@ -1,7 +1,8 @@
-package com.xtbn.domain.agent.service.assmble.component.mcp.client.impl;
+package com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl;
 
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.ToolCallbackFactory;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
@@ -47,9 +48,10 @@ public class SSEToolMcpCreateService implements IToolMcpCreateService {
             McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofSeconds(sseConfig.getRequestTimeout())).build();
             var initSse = mcpSyncClient.initialize();
             log.info("Tool SSE MCP Initialized {}", initSse);
-            return SyncMcpToolCallbackProvider.builder()
+            ToolCallback[] callbacks = SyncMcpToolCallbackProvider.builder()
                     .mcpClients(mcpSyncClient).build()
                     .getToolCallbacks();
+            return ToolCallbackFactory.wrapWithLogging("mcp-sse", sseConfig.getName(), callbacks);
         } catch (Exception e) {
             log.warn("skip sse mcp init for {} because initialization failed: {}", sseConfig.getName(), e.getMessage());
             return new ToolCallback[0];

@@ -1,4 +1,4 @@
-package com.xtbn.domain.agent.service.assmble.component.skill;
+package com.xtbn.domain.agent.service.assmble.component.tool.skill;
 
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import org.springframework.ai.tool.ToolCallback;

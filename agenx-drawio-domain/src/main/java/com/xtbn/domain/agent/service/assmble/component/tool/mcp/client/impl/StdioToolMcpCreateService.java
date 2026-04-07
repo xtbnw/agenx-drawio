@@ -1,8 +1,9 @@
-package com.xtbn.domain.agent.service.assmble.component.mcp.client.impl;
+package com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.ToolCallbackFactory;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.ServerParameters;
@@ -32,7 +33,8 @@ public class StdioToolMcpCreateService implements IToolMcpCreateService {
         var init_stdio = mcpSyncClient.initialize();
 
         log.info("Tool Stdio MCP Initialized {}", init_stdio);
-        return SyncMcpToolCallbackProvider.builder().mcpClients(mcpSyncClient).build()
+        ToolCallback[] callbacks = SyncMcpToolCallbackProvider.builder().mcpClients(mcpSyncClient).build()
                 .getToolCallbacks();
+        return ToolCallbackFactory.wrapWithLogging("mcp-stdio", stdioConfig.getName(), callbacks);
     }
 }

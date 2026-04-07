@@ -5,9 +5,9 @@ import com.xtbn.domain.agent.model.entity.AssembleCommandEntity;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
 import com.xtbn.domain.agent.service.assmble.AbstractSupportNode;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.IToolMcpCreateService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.factory.DefaultMcpClientFactory;
-import com.xtbn.domain.agent.service.assmble.component.skill.IToolSkillCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.factory.DefaultMcpClientFactory;
+import com.xtbn.domain.agent.service.assmble.component.tool.skill.IToolSkillCreateService;
 import com.xtbn.domain.agent.service.assmble.factory.DefaultAssembleFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,6 +57,18 @@ public class ChatModelNode extends AbstractSupportNode {
                 toolCallbackList.addAll(List.of(toolCallbacks));
             }
         }
+
+        log.info("ChatModelNode assembled SpringAI tool callbacks: count={}, tools={}",
+                toolCallbackList.size(),
+                toolCallbackList.stream()
+                        .map(toolCallback -> {
+                            try {
+                                return toolCallback.getToolDefinition() == null ? toolCallback.getClass().getSimpleName() : toolCallback.getToolDefinition().name();
+                            } catch (Exception e) {
+                                return toolCallback.getClass().getSimpleName();
+                            }
+                        })
+                        .collect(Collectors.toList()));
 
         ChatModel chatmodel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)

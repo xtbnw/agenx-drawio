@@ -1,10 +1,10 @@
-package com.xtbn.domain.agent.service.assmble.component.mcp.client.factory;
+package com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.factory;
 
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.IToolMcpCreateService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.impl.LocalToolMcpCreateService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.impl.SSEToolMcpCreateService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.impl.StdioToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl.LocalToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl.SSEToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl.StdioToolMcpCreateService;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
 import lombok.extern.slf4j.Slf4j;

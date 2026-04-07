@@ -34,6 +34,8 @@ Use this skill when the user explicitly asks for a use case diagram or describes
 - Place the system boundary as the central container.
 - Place actors around the left and right sides of the system boundary.
 - Place core use cases near the center and related extensions nearby.
+- Size the system boundary after placing all use cases so it fully encloses them with visible padding on all sides.
+- Keep a clear safety margin between each use case and the system boundary border.
 - Keep association edges short and readable.
 - Group use cases by domain only when the grouping improves clarity.
 
@@ -51,3 +53,5 @@ Use this skill when the user explicitly asks for a use case diagram or describes
 - Do not place actors inside the system boundary.
 - Do not connect actors directly to include or extend edges.
 - Do not turn low-level implementation steps into separate use cases unless the user explicitly wants that granularity.
+- Do not let any use case touch, cross, or sit outside the system boundary.
+- Do not shrink the system boundary so tightly that labels or ovals visually collide with the border.

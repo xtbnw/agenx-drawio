@@ -6,7 +6,7 @@ import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginObservabilityProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
-import com.xtbn.domain.agent.service.assmble.component.mcp.server.DrawioXmlToolService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.server.DrawioXmlToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.ai.tool.ToolCallbackProvider;

@@ -1,7 +1,8 @@
-package com.xtbn.domain.agent.service.assmble.component.skill.impl;
+package com.xtbn.domain.agent.service.assmble.component.tool.skill.impl;
 
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
-import com.xtbn.domain.agent.service.assmble.component.skill.IToolSkillCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.skill.IToolSkillCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.ToolCallbackFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springaicommunity.agent.tools.SkillsTool;
 import org.springframework.ai.tool.ToolCallback;
@@ -68,6 +69,6 @@ public class DefaultToolSkillCreateService implements IToolSkillCreateService {
                     .build();
             toolCallbackList.add(toolCallback);
         }
-        return toolCallbackList.toArray(new ToolCallback[0]);
+        return ToolCallbackFactory.wrapWithLogging("skill", path, toolCallbackList.toArray(new ToolCallback[0]));
     }
 }

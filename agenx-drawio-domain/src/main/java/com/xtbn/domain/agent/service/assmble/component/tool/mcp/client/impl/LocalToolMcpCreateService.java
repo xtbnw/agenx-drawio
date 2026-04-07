@@ -1,7 +1,8 @@
-package com.xtbn.domain.agent.service.assmble.component.mcp.client.impl;
+package com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.impl;
 
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
-import com.xtbn.domain.agent.service.assmble.component.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.mcp.client.IToolMcpCreateService;
+import com.xtbn.domain.agent.service.assmble.component.tool.ToolCallbackFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -24,6 +25,6 @@ public class LocalToolMcpCreateService implements IToolMcpCreateService {
         ToolCallbackProvider localToolCallbackProvider = (ToolCallbackProvider) applicationContext.getBean(local.getName());
         log.info("tool local mcp initialize {}", name);
 
-        return localToolCallbackProvider.getToolCallbacks();
+        return ToolCallbackFactory.wrapWithLogging("mcp-local", name, localToolCallbackProvider.getToolCallbacks());
     }
 }

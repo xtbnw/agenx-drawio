@@ -50,6 +50,10 @@ Generate XML that draw.io can import directly while preserving a clean structure
 - Prefer aligned rows or columns for sibling nodes.
 - Prefer orthogonal connectors and route them around groups to reduce crossings.
 - For complex diagrams, split the graph into clear regions or containers before adding edges.
+- For diagrams with containers, place inner nodes or child containers first, then size each parent container to fully enclose its contents.
+- Parent containers must fully enclose internal nodes, child containers, and connector routing space with visible padding on every side.
+- Do not let container borders overlap child containers, nodes, labels, or connector lines.
+- If a container becomes tight, expand the container or canvas instead of compressing the contents.
 
 ## Node Patterns
 

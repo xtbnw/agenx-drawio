@@ -37,6 +37,7 @@ Use this skill when the input is a PRD, requirement document, feature brief, lon
 - Keep modules or feature groups grouped together when they are central to the PRD.
 - Place supporting notes outside the main structure.
 - Use whitespace to separate unrelated concerns.
+- When the extracted result is an architecture, content, or container-heavy diagram, preserve enough space for parent containers to fully enclose internal modules and child groups.
 
 ## Node And Edge Semantics
 

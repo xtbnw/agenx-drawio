@@ -1,4 +1,4 @@
-package com.xtbn.domain.agent.service.assmble.component.mcp.server;
+package com.xtbn.domain.agent.service.assmble.component.tool.mcp.server;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
