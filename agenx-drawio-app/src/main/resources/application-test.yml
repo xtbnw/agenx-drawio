@@ -43,3 +43,14 @@ logging:
   level:
     root: info
   config: classpath:logback-spring.xml
+
+agent:
+  plugin:
+    sensitive-word:
+      enabled: true
+      mode: reject
+      replace-text: "***"
+      normalize-enabled: true
+      word-list: []
+      whitelist: []
+      hot-reload-enabled: false

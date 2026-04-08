@@ -91,6 +91,7 @@
               agent-name: DrawioDirectXmlAgent
               plugin-name-list:
                 - privacyPlugin
+                - sensitiveWordPlugin
                 - governancePlugin
                 - observabilityPlugin
                 - costAccountingPlugin

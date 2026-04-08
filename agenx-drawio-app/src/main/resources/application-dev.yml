@@ -82,6 +82,14 @@ agent:
       mask-id-card: true
       mask-token: true
       replace-text: "***"
+    sensitive-word:
+      enabled: true
+      mode: reject
+      replace-text: "***"
+      normalize-enabled: true
+      word-list: ["八嘎","我靠"]
+      whitelist: []
+      hot-reload-enabled: false
     cost:
       enabled: true
       model-pricing:

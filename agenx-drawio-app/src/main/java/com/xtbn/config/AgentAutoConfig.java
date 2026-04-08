@@ -5,6 +5,7 @@ import com.xtbn.domain.agent.model.valobj.properties.PluginCostProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginObservabilityProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginSensitiveWordProperties;
 import com.xtbn.domain.agent.service.IAssembleService;
 import com.xtbn.domain.agent.service.assmble.component.tool.mcp.server.DrawioXmlToolService;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
         PluginObservabilityProperties.class,
         PluginGovernanceProperties.class,
         PluginPrivacyProperties.class,
+        PluginSensitiveWordProperties.class,
         PluginCostProperties.class
 })
 public class AgentAutoConfig implements ApplicationListener<ApplicationReadyEvent> {

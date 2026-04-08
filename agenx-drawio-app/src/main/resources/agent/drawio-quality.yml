@@ -126,6 +126,7 @@
               agent-name: DrawioReviewWorkflow
               plugin-name-list:
                 - privacyPlugin
+                - sensitiveWordPlugin
                 - governancePlugin
                 - observabilityPlugin
                 - costAccountingPlugin

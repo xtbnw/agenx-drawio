@@ -3,6 +3,8 @@ package com.xtbn.domain.agent.service.assmble.nodes;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.models.springai.SpringAI;
+import com.google.adk.tools.GoogleSearchTool;
+import com.google.common.collect.ImmutableList;
 import com.xtbn.domain.agent.model.entity.AssembleCommandEntity;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;

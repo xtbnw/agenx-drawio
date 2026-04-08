@@ -109,6 +109,7 @@
               agent-name: DrawioDualWorkflow
               plugin-name-list:
                 - privacyPlugin
+                - sensitiveWordPlugin
                 - governancePlugin
                 - observabilityPlugin
                 - costAccountingPlugin

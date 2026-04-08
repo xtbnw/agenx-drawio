@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xtbn.infrastructure.dao.mapper.SensitiveFilterAuditMapper">
+
+    <insert id="insertAudit" parameterType="com.xtbn.infrastructure.dao.po.SensitiveFilterAuditPO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_sensitive_filter_audit (
+            invocation_id, app_name, agent_name, session_id, user_id, mode, action,
+            match_count, matched_words_json, content_preview, filter_duration_ms, created_at
+        ) VALUES (
+            #{invocationId}, #{appName}, #{agentName}, #{sessionId}, #{userId}, #{mode}, #{action},
+            #{matchCount}, #{matchedWordsJson}, #{contentPreview}, #{filterDurationMs}, #{createdAt}
+        )
+    </insert>
+
+    <insert id="batchInsertWordHits" parameterType="java.util.List">
+        INSERT INTO agent_sensitive_filter_word_hit (
+            audit_id, invocation_id, word, hit_count, created_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.auditId}, #{item.invocationId}, #{item.word}, #{item.hitCount}, #{item.createdAt})
+        </foreach>
+    </insert>
+
+</mapper>
