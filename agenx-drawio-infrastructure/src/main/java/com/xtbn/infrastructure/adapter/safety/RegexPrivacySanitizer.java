@@ -1,7 +1,8 @@
-package com.xtbn.domain.agent.service.assmble.component.plugin.support;
+package com.xtbn.infrastructure.adapter.safety;
 
 import com.google.genai.types.Content;
 import com.google.genai.types.Part;
+import com.xtbn.domain.agent.adapter.port.safety.IPrivacySanitizer;
 import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
 import org.springframework.stereotype.Component;
 
@@ -11,12 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-public class SensitiveDataSanitizer {
+public class RegexPrivacySanitizer implements IPrivacySanitizer {
     private static final Pattern PHONE_PATTERN = Pattern.compile("(?<!\\d)(1\\d{10})(?!\\d)");
     private static final Pattern ID_CARD_PATTERN = Pattern.compile("(?<![0-9A-Za-z])(\\d{17}[\\dXx]|\\d{15})(?![0-9A-Za-z])");
     private static final Pattern BEARER_PATTERN = Pattern.compile("(?i)(Bearer\\s+)([A-Za-z0-9._\\-+/=]+)");
     private static final Pattern TOKEN_PATTERN = Pattern.compile("(?i)\\b(access[_-]?token|refresh[_-]?token|api[_-]?key|authorization)\\b\\s*[:=]\\s*([A-Za-z0-9._\\-+/=]+)");
 
+    @Override
     public SanitizationResult sanitizeContent(Content content, PluginPrivacyProperties properties) {
         if (content == null || content.parts().isEmpty()) {
             return new SanitizationResult(content, 0);
@@ -41,6 +43,7 @@ public class SensitiveDataSanitizer {
         return new SanitizationResult(content.toBuilder().parts(sanitizedParts).build(), matches);
     }
 
+    @Override
     public SanitizedText sanitizeText(String text, PluginPrivacyProperties properties) {
         if (text == null || text.isBlank() || properties == null || !properties.isEnabled()) {
             return new SanitizedText(text, 0);
@@ -97,11 +100,5 @@ public class SensitiveDataSanitizer {
     }
 
     private record ReplacementResult(String text, int matches) {
-    }
-
-    public record SanitizedText(String text, int matches) {
-    }
-
-    public record SanitizationResult(Content content, int matches) {
     }
 }

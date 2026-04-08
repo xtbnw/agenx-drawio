@@ -19,7 +19,7 @@
                 - sse:
                     name: baidu-search
                     base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
-                    sse-endpoint: sse?api_key=Bearer+AppBuilder ${BAIDU_SEARCH_API_KEY:}
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
                     request-timeout: 5
                 - stdio:
                     name: web-fetch

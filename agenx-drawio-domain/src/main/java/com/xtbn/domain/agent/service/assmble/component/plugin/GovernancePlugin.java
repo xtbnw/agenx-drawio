@@ -5,39 +5,35 @@ import com.google.adk.agents.InvocationContext;
 import com.google.adk.models.LlmRequest;
 import com.google.adk.models.LlmResponse;
 import com.google.genai.types.Content;
+import com.xtbn.domain.agent.adapter.repository.IGovernanceRepository;
 import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service("governancePlugin")
 public class GovernancePlugin extends AbstractAgentPluginSupport {
     private final PluginGovernanceProperties properties;
-    private final ConcurrentMap<String, Deque<Long>> userRequestWindows = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, AtomicInteger> userConcurrency = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, String> invocationOwners = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, UserQuotaState> userQuotaStates = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CircuitState> circuitStates = new ConcurrentHashMap<>();
+    private final IGovernanceRepository governanceRepository;
+    private final AtomicInteger governanceRedisErrors = new AtomicInteger();
 
-    public GovernancePlugin(MeterRegistry meterRegistry, PluginGovernanceProperties properties) {
+    public GovernancePlugin(MeterRegistry meterRegistry, PluginGovernanceProperties properties, IGovernanceRepository governanceRepository) {
         super("GovernancePlugin", meterRegistry);
         this.properties = properties;
+        this.governanceRepository = governanceRepository;
+        Gauge.builder("agent_governance_redis_errors_current", governanceRedisErrors, AtomicInteger::get)
+                .register(meterRegistry);
     }
 
     @Override
@@ -47,11 +43,13 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
         }
         fillInvocationMdc(invocationContext);
         try {
-            String userId = safe(invocationContext.userId());
-            rejectIfBlacklisted(invocationContext, userId);
-            rejectIfRateLimited(invocationContext, userId);
-            rejectIfQuotaExceeded(invocationContext, userId);
-            rejectIfConcurrentLimited(invocationContext, userId);
+            String identity = resolveIdentity(invocationContext);
+            rejectIfBlacklisted(invocationContext, identity);
+            rejectIfGlobalRateLimited(invocationContext);
+            rejectIfRateLimited(invocationContext, identity);
+            rejectIfQuotaExceeded(invocationContext, identity);
+            rejectIfGlobalConcurrentLimited(invocationContext);
+            rejectIfConcurrentLimited(invocationContext, identity);
             return super.beforeRunCallback(invocationContext);
         } finally {
             clearMdc();
@@ -64,13 +62,7 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             return super.afterRunCallback(invocationContext);
         }
         try {
-            String userId = invocationOwners.remove(invocationContext.invocationId());
-            if (userId != null) {
-                AtomicInteger active = userConcurrency.get(userId);
-                if (active != null) {
-                    active.updateAndGet(value -> Math.max(value - 1, 0));
-                }
-            }
+            safely("release_concurrency", () -> governanceRepository.releaseConcurrency(invocationContext.invocationId()));
             return super.afterRunCallback(invocationContext);
         } finally {
             clearMdc();
@@ -82,10 +74,8 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled() || !properties.getBreaker().isEnabled()) {
             return super.beforeModelCallback(callbackContext, requestBuilder);
         }
-        String userId = safe(callbackContext.userId());
-        CircuitState circuitState = circuitStates.computeIfAbsent(userId, key -> new CircuitState());
-        long now = System.currentTimeMillis();
-        if (circuitState.openUntil > now) {
+        String identity = resolveIdentity(callbackContext);
+        if (safely("breaker_check", () -> governanceRepository.isCircuitOpen(identity), false)) {
             markGovernanceRejection(callbackContext.invocationContext(), "circuit_open");
             throw new AppException(ResponseCode.CIRCUIT_BREAKER_OPEN.getCode(), ResponseCode.CIRCUIT_BREAKER_OPEN.getInfo());
         }
@@ -97,10 +87,8 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled() || !properties.getBreaker().isEnabled()) {
             return super.afterModelCallback(callbackContext, llmResponse);
         }
-        String userId = safe(callbackContext.userId());
-        CircuitState circuitState = circuitStates.computeIfAbsent(userId, key -> new CircuitState());
-        circuitState.consecutiveFailures = 0;
-        circuitState.openUntil = 0L;
+        String identity = resolveIdentity(callbackContext);
+        safely("breaker_success", () -> governanceRepository.markCircuitSuccess(identity));
         return super.afterModelCallback(callbackContext, llmResponse);
     }
 
@@ -109,101 +97,97 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled() || !properties.getBreaker().isEnabled()) {
             return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
         }
-        String userId = safe(callbackContext.userId());
-        CircuitState circuitState = circuitStates.computeIfAbsent(userId, key -> new CircuitState());
-        circuitState.consecutiveFailures++;
-        if (circuitState.consecutiveFailures >= properties.getBreaker().getFailureThreshold()) {
-            circuitState.openUntil = System.currentTimeMillis() + properties.getBreaker().getOpenSeconds() * 1000L;
-            log.warn("Circuit breaker opened for userId={}, openUntil={}", userId, circuitState.openUntil);
-        }
+        String identity = resolveIdentity(callbackContext);
+        safely("breaker_failure", () -> governanceRepository.markCircuitFailure(
+                identity,
+                properties.getBreaker().getFailureThreshold(),
+                properties.getBreaker().getOpenSeconds()
+        ));
         return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
     }
 
-    @Scheduled(fixedDelay = 600000L, initialDelay = 600000L)
-    public void cleanupStates() {
-        long now = System.currentTimeMillis();
-        LocalDate today = LocalDate.now();
-
-        for (Map.Entry<String, Deque<Long>> entry : userRequestWindows.entrySet()) {
-            Deque<Long> window = entry.getValue();
-            synchronized (window) {
-                while (!window.isEmpty() && now - window.peekFirst() >= 1000L) {
-                    window.pollFirst();
-                }
-                if (window.isEmpty()) {
-                    userRequestWindows.remove(entry.getKey(), window);
-                }
-            }
-        }
-
-        userConcurrency.entrySet().removeIf(entry -> entry.getValue().get() <= 0 && !invocationOwners.containsValue(entry.getKey()));
-        userQuotaStates.entrySet().removeIf(entry -> !today.equals(entry.getValue().date));
-        circuitStates.entrySet().removeIf(entry -> entry.getValue().openUntil <= now && entry.getValue().consecutiveFailures == 0);
-    }
-
-    private void rejectIfBlacklisted(InvocationContext invocationContext, String userId) {
-        if (properties.getBlacklist() != null && properties.getBlacklist().contains(userId)) {
+    private void rejectIfBlacklisted(InvocationContext invocationContext, String identity) {
+        if (safely("blacklist_check", () -> governanceRepository.isBlacklisted("USER", identity), false)) {
             markGovernanceRejection(invocationContext, "blacklist");
             throw new AppException(ResponseCode.USER_BLACKLISTED.getCode(), ResponseCode.USER_BLACKLISTED.getInfo());
         }
     }
 
-    private void rejectIfRateLimited(InvocationContext invocationContext, String userId) {
+    private void rejectIfGlobalRateLimited(InvocationContext invocationContext) {
+        int limit = properties.getGlobalRateLimitPerSecond();
+        if (limit <= 0) {
+            return;
+        }
+        boolean allowed = safely("global_rate_limit", () -> governanceRepository.tryAcquireRateLimit("global", "global", limit), true);
+        if (!allowed) {
+            markGovernanceRejection(invocationContext, "global_rate_limit");
+            throw new AppException(ResponseCode.GLOBAL_RATE_LIMITED.getCode(), ResponseCode.GLOBAL_RATE_LIMITED.getInfo());
+        }
+        markGovernanceAccepted("global_rate_limit");
+    }
+
+    private void rejectIfRateLimited(InvocationContext invocationContext, String identity) {
         int limit = properties.getUserRateLimitPerSecond();
         if (limit <= 0) {
             return;
         }
-        Deque<Long> window = userRequestWindows.computeIfAbsent(userId, key -> new ArrayDeque<>());
-        synchronized (window) {
-            long now = System.currentTimeMillis();
-            while (!window.isEmpty() && now - window.peekFirst() >= 1000L) {
-                window.pollFirst();
-            }
-            if (window.size() >= limit) {
-                markGovernanceRejection(invocationContext, "rate_limit");
-                throw new AppException(ResponseCode.RATE_LIMITED.getCode(), ResponseCode.RATE_LIMITED.getInfo());
-            }
-            window.addLast(now);
+        boolean allowed = safely("user_rate_limit", () -> governanceRepository.tryAcquireRateLimit("user", identity, limit), true);
+        if (!allowed) {
+            markGovernanceRejection(invocationContext, "rate_limit");
+            throw new AppException(ResponseCode.RATE_LIMITED.getCode(), ResponseCode.RATE_LIMITED.getInfo());
         }
+        markGovernanceAccepted("user_rate_limit");
     }
 
-    private void rejectIfQuotaExceeded(InvocationContext invocationContext, String userId) {
+    private void rejectIfQuotaExceeded(InvocationContext invocationContext, String identity) {
         int quotaLimit = properties.getDefaultUserQuotaPerDay();
         if (quotaLimit <= 0) {
             return;
         }
-        UserQuotaState quotaState = userQuotaStates.computeIfAbsent(userId, key -> new UserQuotaState());
-        synchronized (quotaState) {
-            LocalDate today = LocalDate.now();
-            if (!today.equals(quotaState.date)) {
-                quotaState.date = today;
-                quotaState.count = 0;
-            }
-            if (quotaState.count >= quotaLimit) {
-                markGovernanceRejection(invocationContext, "quota");
-                throw new AppException(ResponseCode.USER_QUOTA_EXCEEDED.getCode(), ResponseCode.USER_QUOTA_EXCEEDED.getInfo());
-            }
-            quotaState.count++;
+        boolean allowed = safely("quota_check", () -> governanceRepository.tryAcquireDailyQuota(identity, quotaLimit), true);
+        if (!allowed) {
+            markGovernanceRejection(invocationContext, "quota");
+            throw new AppException(ResponseCode.USER_QUOTA_EXCEEDED.getCode(), ResponseCode.USER_QUOTA_EXCEEDED.getInfo());
         }
+        markGovernanceAccepted("quota");
     }
 
-    private void rejectIfConcurrentLimited(InvocationContext invocationContext, String userId) {
+    private void rejectIfGlobalConcurrentLimited(InvocationContext invocationContext) {
+        int concurrencyLimit = properties.getGlobalConcurrencyLimit();
+        if (concurrencyLimit <= 0) {
+            return;
+        }
+        boolean allowed = safely("global_concurrency", () -> governanceRepository.tryAcquireConcurrency(
+                "global",
+                "global",
+                invocationContext.invocationId(),
+                concurrencyLimit,
+                properties.getConcurrencyLeaseSeconds()
+        ), true);
+        if (!allowed) {
+            markGovernanceRejection(invocationContext, "global_concurrency");
+            throw new AppException(ResponseCode.GLOBAL_CONCURRENCY_LIMITED.getCode(), ResponseCode.GLOBAL_CONCURRENCY_LIMITED.getInfo());
+        }
+        markGovernanceAccepted("global_concurrency");
+    }
+
+    private void rejectIfConcurrentLimited(InvocationContext invocationContext, String identity) {
         int concurrencyLimit = properties.getUserConcurrencyLimit();
         if (concurrencyLimit <= 0) {
             return;
         }
-        AtomicInteger active = userConcurrency.computeIfAbsent(userId, key -> new AtomicInteger(0));
-        while (true) {
-            int current = active.get();
-            if (current >= concurrencyLimit) {
-                markGovernanceRejection(invocationContext, "concurrency");
-                throw new AppException(ResponseCode.RATE_LIMITED.getCode(), "USER_CONCURRENCY_LIMITED");
-            }
-            if (active.compareAndSet(current, current + 1)) {
-                invocationOwners.put(invocationContext.invocationId(), userId);
-                return;
-            }
+        boolean allowed = safely("user_concurrency", () -> governanceRepository.tryAcquireConcurrency(
+                "user",
+                identity,
+                invocationContext.invocationId(),
+                concurrencyLimit,
+                properties.getConcurrencyLeaseSeconds()
+        ), true);
+        if (!allowed) {
+            markGovernanceRejection(invocationContext, "concurrency");
+            throw new AppException(ResponseCode.USER_CONCURRENCY_LIMITED.getCode(), ResponseCode.USER_CONCURRENCY_LIMITED.getInfo());
         }
+        markGovernanceAccepted("user_concurrency");
     }
 
     private void markGovernanceRejection(InvocationContext invocationContext, String result) {
@@ -213,13 +197,64 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
                 .increment();
     }
 
-    private static class UserQuotaState {
-        private LocalDate date = LocalDate.now();
-        private int count;
+    private void markGovernanceAccepted(String action) {
+        Counter.builder("agent_governance_requests_total")
+                .tag("action", safe(action))
+                .tag("result", "accepted")
+                .register(meterRegistry)
+                .increment();
     }
 
-    private static class CircuitState {
-        private int consecutiveFailures;
-        private long openUntil;
+    private String resolveIdentity(InvocationContext invocationContext) {
+        String userId = invocationContext == null ? null : invocationContext.userId();
+        if (userId != null && !userId.isBlank()) {
+            return userId;
+        }
+        String sessionId = invocationContext == null || invocationContext.session() == null ? null : invocationContext.session().id();
+        if (sessionId != null && !sessionId.isBlank()) {
+            return "anonymous:" + sessionId;
+        }
+        String invocationId = invocationContext == null ? null : invocationContext.invocationId();
+        return invocationId == null || invocationId.isBlank() ? "anonymous:unknown" : "anonymous:" + invocationId;
+    }
+
+    private String resolveIdentity(CallbackContext callbackContext) {
+        return resolveIdentity(callbackContext == null ? null : callbackContext.invocationContext());
+    }
+
+    private void safely(String action, Runnable runnable) {
+        safely(action, () -> {
+            runnable.run();
+            return Boolean.TRUE;
+        }, Boolean.TRUE);
+    }
+
+    private boolean safely(String action, BoolSupplier supplier, boolean defaultValue) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            boolean result = supplier.getAsBoolean();
+            sample.stop(Timer.builder("agent_governance_operation_latency")
+                    .tag("action", safe(action))
+                    .tag("result", "success")
+                    .register(meterRegistry));
+            return result;
+        } catch (Exception e) {
+            governanceRedisErrors.incrementAndGet();
+            Counter.builder("agent_governance_redis_errors_total")
+                    .tag("action", safe(action))
+                    .register(meterRegistry)
+                    .increment();
+            sample.stop(Timer.builder("agent_governance_operation_latency")
+                    .tag("action", safe(action))
+                    .tag("result", "error")
+                    .register(meterRegistry));
+            log.warn("governance action failed, action={}", action, e);
+            return defaultValue;
+        }
+    }
+
+    @FunctionalInterface
+    private interface BoolSupplier {
+        boolean getAsBoolean() throws Exception;
     }
 }

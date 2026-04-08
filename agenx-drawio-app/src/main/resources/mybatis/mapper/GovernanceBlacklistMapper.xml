@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xtbn.infrastructure.dao.mapper.GovernanceBlacklistMapper">
+
+    <resultMap id="GovernanceBlacklistMap" type="com.xtbn.infrastructure.dao.po.GovernanceBlacklistPO">
+        <id column="id" property="id"/>
+        <result column="subject_type" property="subjectType"/>
+        <result column="subject_value" property="subjectValue"/>
+        <result column="status" property="status"/>
+        <result column="reason" property="reason"/>
+        <result column="expire_time" property="expireTime"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="queryActiveRules" resultMap="GovernanceBlacklistMap">
+        SELECT id, subject_type, subject_value, status, reason, expire_time, created_by, created_at, updated_by, updated_at
+        FROM agent_governance_blacklist
+        WHERE status = 'ACTIVE'
+          AND (expire_time IS NULL OR expire_time = 0 OR expire_time > #{now})
+    </select>
+
+    <select id="findActiveRule" resultMap="GovernanceBlacklistMap">
+        SELECT id, subject_type, subject_value, status, reason, expire_time, created_by, created_at, updated_by, updated_at
+        FROM agent_governance_blacklist
+        WHERE subject_type = #{subjectType}
+          AND subject_value = #{subjectValue}
+          AND status = 'ACTIVE'
+          AND (expire_time IS NULL OR expire_time = 0 OR expire_time > #{now})
+        LIMIT 1
+    </select>
+
+</mapper>

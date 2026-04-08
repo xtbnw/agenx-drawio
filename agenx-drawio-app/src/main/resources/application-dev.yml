@@ -34,6 +34,12 @@ spring:
     max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
     connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
     connection-test-query: SELECT 1
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:16379}
+#      password: ${REDIS_PASSWORD}
+      database: ${REDIS_DATABASE:0}
   type: com.zaxxer.hikari.HikariDataSource
 
 # MyBatis 配置【如需使用记得打开】
@@ -68,9 +74,14 @@ agent:
       enabled: true
     governance:
       enabled: true
+      global-rate-limit-per-second: 50
       user-rate-limit-per-second: 5
+      global-concurrency-limit: 20
       user-concurrency-limit: 3
       default-user-quota-per-day: 1000
+      redis-prefix: governance
+      concurrency-lease-seconds: 300
+      blacklist-cache-seconds: 30
       blacklist: []
       breaker:
         enabled: false

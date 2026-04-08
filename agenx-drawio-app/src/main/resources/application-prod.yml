@@ -36,8 +36,16 @@ thread:
 
 # 日志
 mybatis:
-  mapper-locations: classpath:/mybatis/mapper/*.xml
+  mapper-locations: classpath*:/mybatis/mapper/*.xml
   config-location: classpath:/mybatis/config/mybatis-config.xml
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
 
 logging:
   level:
@@ -46,6 +54,21 @@ logging:
 
 agent:
   plugin:
+    governance:
+      enabled: true
+      global-rate-limit-per-second: 50
+      user-rate-limit-per-second: 5
+      global-concurrency-limit: 20
+      user-concurrency-limit: 3
+      default-user-quota-per-day: 1000
+      redis-prefix: governance
+      concurrency-lease-seconds: 300
+      blacklist-cache-seconds: 30
+      blacklist: []
+      breaker:
+        enabled: false
+        failure-threshold: 5
+        open-seconds: 60
     sensitive-word:
       enabled: true
       mode: reject
