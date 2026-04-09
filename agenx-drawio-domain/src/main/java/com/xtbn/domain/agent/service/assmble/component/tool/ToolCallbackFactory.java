@@ -1,17 +1,22 @@
 package com.xtbn.domain.agent.service.assmble.component.tool;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
 @Slf4j
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ToolCallbackFactory {
+@Component
+public class ToolCallbackFactory {
+    private final MeterRegistry meterRegistry;
 
-    public static ToolCallback[] wrapWithLogging(String sourceType, String sourceName, ToolCallback[] toolCallbacks) {
+    public ToolCallbackFactory(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    public ToolCallback[] wrapWithLogging(String sourceType, String sourceName, ToolCallback[] toolCallbacks) {
         if (toolCallbacks == null || toolCallbacks.length == 0) {
             log.info("No SpringAI tool callbacks registered: sourceType={}, sourceName={}", sourceType, sourceName);
             return new ToolCallback[0];
@@ -22,7 +27,7 @@ public final class ToolCallbackFactory {
                     String toolName = resolveToolName(toolCallback);
                     log.info("Registered SpringAI tool callback: sourceType={}, sourceName={}, tool={}, callbackClass={}",
                             sourceType, sourceName, toolName, toolCallback.getClass().getName());
-                    return (ToolCallback) new LoggingToolCallback(toolCallback, sourceType, sourceName);
+                    return (ToolCallback) new LoggingToolCallback(toolCallback, sourceType, sourceName, meterRegistry);
                 })
                 .toArray(ToolCallback[]::new);
 

@@ -3,6 +3,7 @@ package com.xtbn.domain.agent.service.assmble.component.tool.skill.impl;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.service.assmble.component.tool.skill.IToolSkillCreateService;
 import com.xtbn.domain.agent.service.assmble.component.tool.ToolCallbackFactory;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springaicommunity.agent.tools.SkillsTool;
 import org.springframework.ai.tool.ToolCallback;
@@ -20,6 +21,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class DefaultToolSkillCreateService implements IToolSkillCreateService {
+    @Resource
+    private ToolCallbackFactory toolCallbackFactory;
+
     @Override
     public ToolCallback[] buildToolCallback(AgentConfigVO.AgentRuntime.ChatModel.ToolSkill toolSkill) throws Exception {
         String type = toolSkill.getType();
@@ -69,6 +73,6 @@ public class DefaultToolSkillCreateService implements IToolSkillCreateService {
                     .build();
             toolCallbackList.add(toolCallback);
         }
-        return ToolCallbackFactory.wrapWithLogging("skill", path, toolCallbackList.toArray(new ToolCallback[0]));
+        return toolCallbackFactory.wrapWithLogging("skill", path, toolCallbackList.toArray(new ToolCallback[0]));
     }
 }

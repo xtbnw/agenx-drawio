@@ -16,6 +16,8 @@ import javax.annotation.Resource;
 public class LocalToolMcpCreateService implements IToolMcpCreateService {
     @Resource
     private ApplicationContext applicationContext;
+    @Resource
+    private ToolCallbackFactory toolCallbackFactory;
 
     @Override
     public ToolCallback[] buildToolCallback(AgentConfigVO.AgentRuntime.ChatModel.ToolMcp toolMcp) throws Exception {
@@ -25,6 +27,6 @@ public class LocalToolMcpCreateService implements IToolMcpCreateService {
         ToolCallbackProvider localToolCallbackProvider = (ToolCallbackProvider) applicationContext.getBean(local.getName());
         log.info("tool local mcp initialize {}", name);
 
-        return ToolCallbackFactory.wrapWithLogging("mcp-local", name, localToolCallbackProvider.getToolCallbacks());
+        return toolCallbackFactory.wrapWithLogging("mcp-local", name, localToolCallbackProvider.getToolCallbacks());
     }
 }

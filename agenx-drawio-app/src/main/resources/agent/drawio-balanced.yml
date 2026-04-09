@@ -112,4 +112,4 @@
                 - sensitiveWordPlugin
                 - governancePlugin
                 - observabilityPlugin
-                - costAccountingPlugin
+#                - costAccountingPlugin

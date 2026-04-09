@@ -17,6 +17,9 @@ import java.time.Duration;
 @Slf4j
 @Service
 public class SSEToolMcpCreateService implements IToolMcpCreateService {
+    @javax.annotation.Resource
+    private ToolCallbackFactory toolCallbackFactory;
+
     @Override
     public ToolCallback[] buildToolCallback(AgentConfigVO.AgentRuntime.ChatModel.ToolMcp toolMcp) throws Exception {
         AgentConfigVO.AgentRuntime.ChatModel.ToolMcp.SSEServerParameters sseConfig = toolMcp.getSse();
@@ -51,7 +54,7 @@ public class SSEToolMcpCreateService implements IToolMcpCreateService {
             ToolCallback[] callbacks = SyncMcpToolCallbackProvider.builder()
                     .mcpClients(mcpSyncClient).build()
                     .getToolCallbacks();
-            return ToolCallbackFactory.wrapWithLogging("mcp-sse", sseConfig.getName(), callbacks);
+            return toolCallbackFactory.wrapWithLogging("mcp-sse", sseConfig.getName(), callbacks);
         } catch (Exception e) {
             log.warn("skip sse mcp init for {} because initialization failed: {}", sseConfig.getName(), e.getMessage());
             return new ToolCallback[0];

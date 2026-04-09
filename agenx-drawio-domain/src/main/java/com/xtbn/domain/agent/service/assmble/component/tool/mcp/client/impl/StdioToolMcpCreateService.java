@@ -18,6 +18,9 @@ import java.time.Duration;
 @Slf4j
 @Service
 public class StdioToolMcpCreateService implements IToolMcpCreateService {
+    @javax.annotation.Resource
+    private ToolCallbackFactory toolCallbackFactory;
+
     @Override
     public ToolCallback[] buildToolCallback(AgentConfigVO.AgentRuntime.ChatModel.ToolMcp toolMcp) throws Exception {
         AgentConfigVO.AgentRuntime.ChatModel.ToolMcp.StdioServerParameters stdioConfig = toolMcp.getStdio();
@@ -35,6 +38,6 @@ public class StdioToolMcpCreateService implements IToolMcpCreateService {
         log.info("Tool Stdio MCP Initialized {}", init_stdio);
         ToolCallback[] callbacks = SyncMcpToolCallbackProvider.builder().mcpClients(mcpSyncClient).build()
                 .getToolCallbacks();
-        return ToolCallbackFactory.wrapWithLogging("mcp-stdio", stdioConfig.getName(), callbacks);
+        return toolCallbackFactory.wrapWithLogging("mcp-stdio", stdioConfig.getName(), callbacks);
     }
 }

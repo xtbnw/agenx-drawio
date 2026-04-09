@@ -101,9 +101,9 @@ agent:
       word-list: ["八嘎","我靠"]
       whitelist: []
       hot-reload-enabled: false
-    cost:
-      enabled: true
-      model-pricing:
-        "glm-4":
-          input-per-1k: 0.003
-          output-per-1k: 0.014
+#    cost:
+#      enabled: true
+#      model-pricing:
+#        "glm-4":
+#          input-per-1k: 0.003
+#          output-per-1k: 0.014
