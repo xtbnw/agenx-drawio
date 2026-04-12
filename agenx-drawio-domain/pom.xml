@@ -55,6 +55,11 @@
             <groupId>com.xtbn</groupId>
             <artifactId>agenx-drawio-types</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

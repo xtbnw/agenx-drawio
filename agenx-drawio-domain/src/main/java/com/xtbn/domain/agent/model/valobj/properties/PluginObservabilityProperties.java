@@ -7,4 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "agent.plugin.observability")
 public class PluginObservabilityProperties {
     private boolean enabled = true;
+    private boolean modelMetricsEnabled = false;
+    private boolean toolMetricsEnabled = false;
+    private boolean agentStepMetricsEnabled = false;
 }

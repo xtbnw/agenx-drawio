@@ -1,0 +1,43 @@
+ai:
+  agent:
+    config:
+      tables:
+        drawio-degrade:
+          app-name: drawio-degrade
+          root-agent:
+            root-agent-id: internal-drawio-degrade
+            root-agent-name: Internal Draw.io Degrade Agent
+            root-agent-desc: Internal fallback mode that converts a user request to a blueprint and renders draw.io XML through code.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
+              api-key: ${AI_API_KEY}
+              completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+            chat-model:
+              model: ${AI_MODEL:glm-4.7}
+              tool-mcp-list:
+                - local:
+                    name: drawioXmlToolCallbackProvider
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
+            agents:
+              - name: DrawioDegradeAgent
+                description: Generates a conservative blueprint and renders final draw.io XML through the local tool.
+                instruction: |
+                  You are the internal draw.io degrade agent.
+
+                  Read the user's request and convert it into the exact argument structure expected by the local renderDrawioXml tool.
+                  Then call renderDrawioXml exactly once and return the tool result unchanged.
+
+                  Requirements:
+                  1. Do not hand-write XML.
+                  2. Use a conservative, import-safe layout.
+                  3. Keep the diagram semantically faithful to the user's request.
+                  4. Prefer simple readable structure over decorative styling.
+                  5. Use stable node ids, standard draw.io-compatible shapes, and explicit edges.
+                  6. After the tool returns, output the tool result only.
+            runner:
+              agent-name: DrawioDegradeAgent
+              plugin-name-list:
+                - observabilityPlugin

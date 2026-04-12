@@ -1,5 +1,6 @@
 package com.xtbn.domain.agent.service.assmble.component.tool;
 
+import com.xtbn.types.common.MetricsConstants;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -86,7 +87,7 @@ public class LoggingToolCallback implements ToolCallback {
         if (meterRegistry == null) {
             return;
         }
-        Counter.builder("agent_tool_calls_total")
+        Counter.builder(MetricsConstants.AGENT_TOOL_CALLS_TOTAL)
                 .tag("tool", toolName)
                 .tag("sourceType", sourceType)
                 .tag("sourceName", sourceName)
@@ -99,7 +100,7 @@ public class LoggingToolCallback implements ToolCallback {
         if (meterRegistry == null) {
             return;
         }
-        Counter.builder("agent_tool_failures_total")
+        Counter.builder(MetricsConstants.AGENT_TOOL_FAILURES_TOTAL)
                 .tag("tool", toolName)
                 .tag("sourceType", sourceType)
                 .tag("sourceName", sourceName)
@@ -111,11 +112,14 @@ public class LoggingToolCallback implements ToolCallback {
         if (meterRegistry == null) {
             return;
         }
-        Timer.builder("agent_tool_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_TOOL_DURATION_SECONDS)
                 .tag("tool", toolName)
                 .tag("sourceType", sourceType)
                 .tag("sourceName", sourceName)
                 .tag("result", result)
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis(startNanos), 0L), TimeUnit.MILLISECONDS);
     }

@@ -10,6 +10,7 @@ import com.google.adk.tools.ToolContext;
 import com.google.genai.types.Content;
 import com.xtbn.domain.agent.model.valobj.properties.PluginObservabilityProperties;
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
+import com.xtbn.types.common.MetricsConstants;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -55,7 +56,7 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         }
         fillInvocationMdc(invocationContext);
         startTimer(invocationKey(invocationContext));
-        Counter.builder("agent_requests_total")
+        Counter.builder(MetricsConstants.AGENT_REQUESTS_TOTAL)
                 .tags(commonTags(invocationContext))
                 .register(meterRegistry)
                 .increment();
@@ -75,12 +76,15 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         fillInvocationMdc(invocationContext);
         long elapsedMillis = stopTimerMillis(invocationKey(invocationContext));
         boolean failed = failedInvocations.remove(invocationContext.invocationId());
-        Timer.builder("agent_run_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_RUN_DURATION_SECONDS)
                 .tags(resultTags(invocationContext, failed ? "failure" : "success").and("phase", "run"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         if (failed) {
-            Counter.builder("agent_request_failures_total")
+            Counter.builder(MetricsConstants.AGENT_REQUEST_FAILURES_TOTAL)
                     .tags(commonTags(invocationContext))
                     .register(meterRegistry)
                     .increment();
@@ -98,6 +102,9 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.beforeAgentCallback(agent, callbackContext);
         }
+        if (!properties.isAgentStepMetricsEnabled()) {
+            return super.beforeAgentCallback(agent, callbackContext);
+        }
         fillCallbackMdc(callbackContext);
         startTimer(callbackKey(callbackContext, "agent"));
         try {
@@ -113,10 +120,16 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.afterAgentCallback(agent, callbackContext);
         }
+        if (!properties.isAgentStepMetricsEnabled()) {
+            return super.afterAgentCallback(agent, callbackContext);
+        }
         fillCallbackMdc(callbackContext);
         long elapsedMillis = stopTimerMillis(callbackKey(callbackContext, "agent"));
-        Timer.builder("agent_run_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_RUN_DURATION_SECONDS)
                 .tags(commonTags(callbackContext).and("result", "success").and("phase", "agent"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         try {
@@ -132,10 +145,13 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.beforeModelCallback(callbackContext, requestBuilder);
         }
+        if (!properties.isModelMetricsEnabled()) {
+            return super.beforeModelCallback(callbackContext, requestBuilder);
+        }
         fillCallbackMdc(callbackContext);
         String model = safe(requestBuilder.build().model().orElse("unknown"));
         startTimer(callbackKey(callbackContext, "model"));
-        Counter.builder("agent_model_calls_total")
+        Counter.builder(MetricsConstants.AGENT_MODEL_CALLS_TOTAL)
                 .tags(modelTags(callbackContext, model, "started"))
                 .register(meterRegistry)
                 .increment();
@@ -152,11 +168,17 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.afterModelCallback(callbackContext, llmResponse);
         }
+        if (!properties.isModelMetricsEnabled()) {
+            return super.afterModelCallback(callbackContext, llmResponse);
+        }
         fillCallbackMdc(callbackContext);
         String model = safe(llmResponse == null ? null : llmResponse.modelVersion().orElse("unknown"));
         long elapsedMillis = stopTimerMillis(callbackKey(callbackContext, "model"));
-        Timer.builder("agent_model_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_MODEL_DURATION_SECONDS)
                 .tags(modelTags(callbackContext, model, "success"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         try {
@@ -172,16 +194,23 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
         }
+        if (!properties.isModelMetricsEnabled()) {
+            failedInvocations.add(callbackContext.invocationId());
+            return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
+        }
         fillCallbackMdc(callbackContext);
         String model = safe(requestBuilder.build().model().orElse("unknown"));
         long elapsedMillis = stopTimerMillis(callbackKey(callbackContext, "model"));
         failedInvocations.add(callbackContext.invocationId());
-        Counter.builder("agent_model_failures_total")
+        Counter.builder(MetricsConstants.AGENT_MODEL_FAILURES_TOTAL)
                 .tags(modelTags(callbackContext, model, "failure"))
                 .register(meterRegistry)
                 .increment();
-        Timer.builder("agent_model_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_MODEL_DURATION_SECONDS)
                 .tags(modelTags(callbackContext, model, "failure"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         try {
@@ -197,9 +226,12 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.beforeToolCallback(tool, toolArgs, toolContext);
         }
+        if (!properties.isToolMetricsEnabled()) {
+            return super.beforeToolCallback(tool, toolArgs, toolContext);
+        }
         fillToolMdc(tool, toolContext);
         startTimer(toolKey(toolContext, tool));
-        Counter.builder("agent_tool_calls_total")
+        Counter.builder(MetricsConstants.AGENT_TOOL_CALLS_TOTAL)
                 .tags(toolTags(toolContext, tool, "started"))
                 .register(meterRegistry)
                 .increment();
@@ -216,10 +248,16 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.afterToolCallback(tool, toolArgs, toolContext, result);
         }
+        if (!properties.isToolMetricsEnabled()) {
+            return super.afterToolCallback(tool, toolArgs, toolContext, result);
+        }
         fillToolMdc(tool, toolContext);
         long elapsedMillis = stopTimerMillis(toolKey(toolContext, tool));
-        Timer.builder("agent_tool_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_TOOL_DURATION_SECONDS)
                 .tags(toolTags(toolContext, tool, "success"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         try {
@@ -235,15 +273,22 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.onToolErrorCallback(tool, toolArgs, toolContext, throwable);
         }
+        if (!properties.isToolMetricsEnabled()) {
+            failedInvocations.add(toolContext.invocationId());
+            return super.onToolErrorCallback(tool, toolArgs, toolContext, throwable);
+        }
         fillToolMdc(tool, toolContext);
         long elapsedMillis = stopTimerMillis(toolKey(toolContext, tool));
         failedInvocations.add(toolContext.invocationId());
-        Counter.builder("agent_tool_failures_total")
+        Counter.builder(MetricsConstants.AGENT_TOOL_FAILURES_TOTAL)
                 .tags(toolTags(toolContext, tool, "failure"))
                 .register(meterRegistry)
                 .increment();
-        Timer.builder("agent_tool_duration_seconds")
+        Timer.builder(MetricsConstants.AGENT_TOOL_DURATION_SECONDS)
                 .tags(toolTags(toolContext, tool, "failure"))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(MetricsConstants.METRIC_MIN_DURATION)
+                .maximumExpectedValue(MetricsConstants.METRIC_MAX_DURATION)
                 .register(meterRegistry)
                 .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
         try {

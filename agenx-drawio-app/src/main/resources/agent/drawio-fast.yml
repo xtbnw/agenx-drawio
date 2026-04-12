@@ -93,5 +93,6 @@
                 - privacyPlugin
                 - sensitiveWordPlugin
                 - governancePlugin
+                - drawioXmlGuardPlugin
                 - observabilityPlugin
 #                - costAccountingPlugin

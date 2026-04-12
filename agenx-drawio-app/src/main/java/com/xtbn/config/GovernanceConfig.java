@@ -3,6 +3,7 @@ package com.xtbn.config;
 import com.xtbn.infrastructure.adapter.safety.GovernanceScriptExecutor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -40,9 +41,9 @@ public class GovernanceConfig {
 
     @Bean
     public GovernanceScriptExecutor governanceScriptExecutor(StringRedisTemplate stringRedisTemplate,
-                                                             DefaultRedisScript<Long> governanceTokenBucketScript,
-                                                             DefaultRedisScript<Long> governanceConcurrencyAcquireScript,
-                                                             DefaultRedisScript<Long> governanceConcurrencyReleaseScript) {
+                                                             @Qualifier("governanceTokenBucketScript") DefaultRedisScript<Long> governanceTokenBucketScript,
+                                                             @Qualifier("governanceConcurrencyAcquireScript") DefaultRedisScript<Long> governanceConcurrencyAcquireScript,
+                                                             @Qualifier("governanceConcurrencyReleaseScript") DefaultRedisScript<Long> governanceConcurrencyReleaseScript) {
         return new GovernanceScriptExecutor(
                 stringRedisTemplate,
                 governanceTokenBucketScript,

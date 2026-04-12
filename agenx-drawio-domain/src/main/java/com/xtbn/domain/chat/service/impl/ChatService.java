@@ -10,6 +10,7 @@ import com.xtbn.domain.agent.adapter.port.registry.IBeanRegistry;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioXmlGuardProperties;
 import com.xtbn.domain.chat.model.entity.ChatCommandEntity;
 import com.xtbn.domain.chat.model.valobj.ChatHistoryMessageVO;
 import com.xtbn.domain.chat.model.valobj.ChatSessionDetailVO;
@@ -55,6 +56,8 @@ public class ChatService implements IChatService {
     @Resource
     private AgentAutoConfigProperties agentAutoConfigProperties;
     @Resource
+    private PluginDrawioXmlGuardProperties pluginDrawioXmlGuardProperties;
+    @Resource
     private BaseSessionService sessionService;
 
     @Override
@@ -64,7 +67,7 @@ public class ChatService implements IChatService {
         List<AgentConfigVO.RootAgent> agentList = new ArrayList<>();
         if (null != tables) {
             for (AgentConfigVO vo : tables.values()) {
-                if (null != vo.getRootAgent()) {
+                if (null != vo.getRootAgent() && isPublicRootAgent(vo.getRootAgent().getRootAgentId())) {
                     agentList.add(vo.getRootAgent());
                 }
             }
@@ -370,5 +373,9 @@ public class ChatService implements IChatService {
 
     private String firstNonBlank(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private boolean isPublicRootAgent(String rootAgentId) {
+        return rootAgentId != null && !rootAgentId.startsWith(pluginDrawioXmlGuardProperties.getInternalAgentPrefix());
     }
 }

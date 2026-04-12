@@ -6,7 +6,6 @@ import com.google.adk.models.LlmResponse;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import com.xtbn.domain.agent.model.valobj.properties.PluginCostProperties;
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
@@ -55,20 +54,7 @@ public class CostAccountingPlugin extends AbstractAgentPluginSupport {
         int outputTokens = usageMetadata.candidatesTokenCount().orElse(0);
         int totalTokens = usageMetadata.totalTokenCount().orElse(inputTokens + outputTokens);
 
-        Counter.builder("agent_input_tokens_total")
-                .tags(modelTags(callbackContext, model, "success"))
-                .register(meterRegistry)
-                .increment(inputTokens);
-        Counter.builder("agent_output_tokens_total")
-                .tags(modelTags(callbackContext, model, "success"))
-                .register(meterRegistry)
-                .increment(outputTokens);
-
         BigDecimal estimatedCost = estimateCost(model, inputTokens, outputTokens);
-        Counter.builder("agent_estimated_cost_total")
-                .tags(modelTags(callbackContext, model, "success"))
-                .register(meterRegistry)
-                .increment(estimatedCost.doubleValue());
 
         requestModels.remove(key);
         log.info("Model usage accounted, model={}, inputTokens={}, outputTokens={}, totalTokens={}, estimatedCost={}",

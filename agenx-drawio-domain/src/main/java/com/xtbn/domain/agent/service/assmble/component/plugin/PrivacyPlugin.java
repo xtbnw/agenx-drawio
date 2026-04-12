@@ -5,7 +5,6 @@ import com.google.genai.types.Content;
 import com.xtbn.domain.agent.adapter.port.safety.IPrivacySanitizer;
 import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +31,6 @@ public class PrivacyPlugin extends AbstractAgentPluginSupport {
         if (result.matches() <= 0) {
             return super.onUserMessageCallback(invocationContext, userMessage);
         }
-
-        Counter.builder("agent_sensitive_matches_total")
-                .tags(commonTags(invocationContext))
-                .register(meterRegistry)
-                .increment(result.matches());
         log.info("Sensitive data sanitized, matches={}", result.matches());
         return Maybe.just(result.content());
     }

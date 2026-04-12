@@ -8,32 +8,26 @@ import com.google.genai.types.Content;
 import com.xtbn.domain.agent.adapter.repository.IGovernanceRepository;
 import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
+import com.xtbn.types.common.MetricsConstants;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service("governancePlugin")
 public class GovernancePlugin extends AbstractAgentPluginSupport {
     private final PluginGovernanceProperties properties;
     private final IGovernanceRepository governanceRepository;
-    private final AtomicInteger governanceRedisErrors = new AtomicInteger();
 
     public GovernancePlugin(MeterRegistry meterRegistry, PluginGovernanceProperties properties, IGovernanceRepository governanceRepository) {
         super("GovernancePlugin", meterRegistry);
         this.properties = properties;
         this.governanceRepository = governanceRepository;
-        Gauge.builder("agent_governance_redis_errors_current", governanceRedisErrors, AtomicInteger::get)
-                .register(meterRegistry);
     }
 
     @Override
@@ -123,7 +117,6 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             markGovernanceRejection(invocationContext, "global_rate_limit");
             throw new AppException(ResponseCode.GLOBAL_RATE_LIMITED.getCode(), ResponseCode.GLOBAL_RATE_LIMITED.getInfo());
         }
-        markGovernanceAccepted("global_rate_limit");
     }
 
     private void rejectIfRateLimited(InvocationContext invocationContext, String identity) {
@@ -136,7 +129,6 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             markGovernanceRejection(invocationContext, "rate_limit");
             throw new AppException(ResponseCode.RATE_LIMITED.getCode(), ResponseCode.RATE_LIMITED.getInfo());
         }
-        markGovernanceAccepted("user_rate_limit");
     }
 
     private void rejectIfQuotaExceeded(InvocationContext invocationContext, String identity) {
@@ -149,7 +141,6 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             markGovernanceRejection(invocationContext, "quota");
             throw new AppException(ResponseCode.USER_QUOTA_EXCEEDED.getCode(), ResponseCode.USER_QUOTA_EXCEEDED.getInfo());
         }
-        markGovernanceAccepted("quota");
     }
 
     private void rejectIfGlobalConcurrentLimited(InvocationContext invocationContext) {
@@ -168,7 +159,6 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             markGovernanceRejection(invocationContext, "global_concurrency");
             throw new AppException(ResponseCode.GLOBAL_CONCURRENCY_LIMITED.getCode(), ResponseCode.GLOBAL_CONCURRENCY_LIMITED.getInfo());
         }
-        markGovernanceAccepted("global_concurrency");
     }
 
     private void rejectIfConcurrentLimited(InvocationContext invocationContext, String identity) {
@@ -187,20 +177,11 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             markGovernanceRejection(invocationContext, "concurrency");
             throw new AppException(ResponseCode.USER_CONCURRENCY_LIMITED.getCode(), ResponseCode.USER_CONCURRENCY_LIMITED.getInfo());
         }
-        markGovernanceAccepted("user_concurrency");
     }
 
     private void markGovernanceRejection(InvocationContext invocationContext, String result) {
-        Counter.builder("agent_governance_rejections_total")
+        Counter.builder(MetricsConstants.AGENT_GOVERNANCE_REJECTIONS_TOTAL)
                 .tags(resultTags(invocationContext, result))
-                .register(meterRegistry)
-                .increment();
-    }
-
-    private void markGovernanceAccepted(String action) {
-        Counter.builder("agent_governance_requests_total")
-                .tag("action", safe(action))
-                .tag("result", "accepted")
                 .register(meterRegistry)
                 .increment();
     }
@@ -230,24 +211,9 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
     }
 
     private boolean safely(String action, BoolSupplier supplier, boolean defaultValue) {
-        Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            boolean result = supplier.getAsBoolean();
-            sample.stop(Timer.builder("agent_governance_operation_latency")
-                    .tag("action", safe(action))
-                    .tag("result", "success")
-                    .register(meterRegistry));
-            return result;
+            return supplier.getAsBoolean();
         } catch (Exception e) {
-            governanceRedisErrors.incrementAndGet();
-            Counter.builder("agent_governance_redis_errors_total")
-                    .tag("action", safe(action))
-                    .register(meterRegistry)
-                    .increment();
-            sample.stop(Timer.builder("agent_governance_operation_latency")
-                    .tag("action", safe(action))
-                    .tag("result", "error")
-                    .register(meterRegistry));
             log.warn("governance action failed, action={}", action, e);
             return defaultValue;
         }

@@ -12,10 +12,7 @@ import com.xtbn.domain.agent.model.valobj.properties.PluginSensitiveWordProperti
 import com.xtbn.domain.agent.service.assmble.component.plugin.support.AbstractAgentPluginSupport;
 import com.xtbn.types.enums.ResponseCode;
 import com.xtbn.types.exception.AppException;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 @Slf4j
 @Service("sensitiveWordPlugin")
 public class SensitiveWordPlugin extends AbstractAgentPluginSupport {
@@ -109,29 +105,7 @@ public class SensitiveWordPlugin extends AbstractAgentPluginSupport {
     }
 
     private void recordMetrics(InvocationContext invocationContext, int totalMatches, long elapsedMillis, String result, String action) {
-        Tags tags = commonTags(invocationContext)
-                .and("mode", properties.getMode().name().toLowerCase())
-                .and("result", result)
-                .and("action", action);
-
-        Counter.builder("agent_sensitive_filter_requests_total")
-                .tags(tags)
-                .register(meterRegistry)
-                .increment();
-
-        Timer.builder("agent_sensitive_filter_duration_seconds")
-                .tags(tags)
-                .publishPercentileHistogram()
-                .publishPercentiles(0.95, 0.99)
-                .register(meterRegistry)
-                .record(Math.max(elapsedMillis, 0L), TimeUnit.MILLISECONDS);
-
-        if (totalMatches > 0) {
-            Counter.builder("agent_sensitive_filter_matches_total")
-                    .tags(tags)
-                    .register(meterRegistry)
-                    .increment(totalMatches);
-        }
+        // Metrics intentionally omitted. Keep only logs and audit persistence for this plugin.
     }
 
     private void persistAudit(InvocationContext invocationContext,

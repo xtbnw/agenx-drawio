@@ -40,3 +40,4 @@ build/
 /.idea/
 /.mvn/
 /data/
+/agenx-drawio-domain/src/test/
