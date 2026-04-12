@@ -1,6 +1,7 @@
 package com.xtbn.domain.agent.service.assmble.component.tool;
 
 import com.xtbn.types.common.MetricsConstants;
+import com.xtbn.types.common.RequestTraceConstants;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -9,6 +10,7 @@ import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
+import org.slf4j.MDC;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +46,7 @@ public class LoggingToolCallback implements ToolCallback {
     @Override
     public String call(String toolInput) {
         long startNanos = System.nanoTime();
+        String previousTraceId = MDC.get(RequestTraceConstants.MDC_TRACE_ID);
         markStarted();
         log.info("SpringAI Tool started: sourceType={}, sourceName={}, tool={}, inputLength={}, inputPreview={}",
                 sourceType, sourceName, toolName, length(toolInput), preview(toolInput));
@@ -59,12 +62,16 @@ public class LoggingToolCallback implements ToolCallback {
             log.error("SpringAI Tool failed: sourceType={}, sourceName={}, tool={}, elapsedMs={}, inputLength={}",
                     sourceType, sourceName, toolName, elapsedMillis(startNanos), length(toolInput), throwable);
             throw throwable;
+        } finally {
+            restoreTraceId(previousTraceId);
         }
     }
 
     @Override
     public String call(String toolInput, ToolContext toolContext) {
         long startNanos = System.nanoTime();
+        String previousTraceId = MDC.get(RequestTraceConstants.MDC_TRACE_ID);
+        applyTraceId(toolContext);
         markStarted();
         log.info("SpringAI Tool started: sourceType={}, sourceName={}, tool={}, inputLength={}, inputPreview={}, contextPresent={}",
                 sourceType, sourceName, toolName, length(toolInput), preview(toolInput), toolContext != null);
@@ -80,6 +87,8 @@ public class LoggingToolCallback implements ToolCallback {
             log.error("SpringAI Tool failed: sourceType={}, sourceName={}, tool={}, elapsedMs={}, inputLength={}",
                     sourceType, sourceName, toolName, elapsedMillis(startNanos), length(toolInput), throwable);
             throw throwable;
+        } finally {
+            restoreTraceId(previousTraceId);
         }
     }
 
@@ -153,5 +162,23 @@ public class LoggingToolCallback implements ToolCallback {
             return normalized;
         }
         return normalized.substring(0, PREVIEW_LIMIT) + "...";
+    }
+
+    private void applyTraceId(ToolContext toolContext) {
+        if (toolContext == null || toolContext.getContext() == null) {
+            return;
+        }
+        Object requestId = toolContext.getContext().get(RequestTraceConstants.CALLBACK_REQUEST_ID);
+        if (requestId != null && !String.valueOf(requestId).isBlank()) {
+            MDC.put(RequestTraceConstants.MDC_TRACE_ID, String.valueOf(requestId));
+        }
+    }
+
+    private void restoreTraceId(String previousTraceId) {
+        if (previousTraceId == null || previousTraceId.isBlank()) {
+            MDC.remove(RequestTraceConstants.MDC_TRACE_ID);
+            return;
+        }
+        MDC.put(RequestTraceConstants.MDC_TRACE_ID, previousTraceId);
     }
 }

@@ -5,6 +5,7 @@ import com.google.adk.agents.InvocationContext;
 import com.google.adk.plugins.BasePlugin;
 import com.google.adk.tools.BaseTool;
 import com.google.adk.tools.ToolContext;
+import com.xtbn.types.common.RequestTraceConstants;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import org.slf4j.MDC;
@@ -33,7 +34,7 @@ public abstract class AbstractAgentPluginSupport extends BasePlugin {
         if (invocationContext == null) {
             return;
         }
-        putMdc(MDC_TRACE_ID, invocationContext.invocationId());
+        putMdc(MDC_TRACE_ID, resolveRequestId(invocationContext));
         putMdc(MDC_USER_ID, invocationContext.userId());
         putMdc(MDC_SESSION_ID, invocationContext.session() == null ? null : invocationContext.session().id());
         putMdc(MDC_AGENT_NAME, invocationContext.agent() == null ? null : invocationContext.agent().name());
@@ -82,6 +83,17 @@ public abstract class AbstractAgentPluginSupport extends BasePlugin {
 
     protected String invocationKey(InvocationContext invocationContext) {
         return invocationContext == null ? null : invocationContext.invocationId();
+    }
+
+    protected String resolveRequestId(InvocationContext invocationContext) {
+        if (invocationContext == null) {
+            return null;
+        }
+        Object requestId = invocationContext.callbackContextData().get(RequestTraceConstants.CALLBACK_REQUEST_ID);
+        if (requestId != null && !String.valueOf(requestId).isBlank()) {
+            return String.valueOf(requestId);
+        }
+        return invocationContext.invocationId();
     }
 
     protected String callbackKey(CallbackContext callbackContext, String suffix) {

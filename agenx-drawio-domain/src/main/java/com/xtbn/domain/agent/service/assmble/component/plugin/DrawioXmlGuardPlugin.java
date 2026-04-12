@@ -15,6 +15,7 @@ import com.xtbn.domain.agent.service.assmble.component.plugin.support.DrawioXmlV
 import com.xtbn.types.common.Constants;
 import com.xtbn.types.common.DrawioXmlGuardConstants;
 import com.xtbn.types.common.MetricsConstants;
+import com.xtbn.types.common.RequestTraceConstants;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.rxjava3.core.Maybe;
@@ -154,6 +155,10 @@ public class DrawioXmlGuardPlugin extends AbstractAgentPluginSupport {
         Map<String, Object> callbackData = new LinkedHashMap<>();
         callbackData.put(DrawioXmlGuardConstants.CTX_SKIP_GUARD, Boolean.TRUE);
         callbackData.put(DrawioXmlGuardConstants.CTX_CALL_STAGE, stage);
+        String requestId = resolveRequestId(callbackContext.invocationContext());
+        if (requestId != null && !requestId.isBlank()) {
+            callbackData.put(RequestTraceConstants.CALLBACK_REQUEST_ID, requestId);
+        }
 
         try {
             runner.sessionService()

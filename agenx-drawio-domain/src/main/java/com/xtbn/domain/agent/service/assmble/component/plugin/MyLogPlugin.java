@@ -7,6 +7,7 @@ import com.google.adk.plugins.BasePlugin;
 import com.google.adk.tools.BaseTool;
 import com.google.adk.tools.ToolContext;
 import com.google.genai.types.Content;
+import com.xtbn.types.common.RequestTraceConstants;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
@@ -127,7 +128,7 @@ public class MyLogPlugin extends BasePlugin {
         if (invocationContext == null) {
             return;
         }
-        putMdc(MDC_TRACE_ID, invocationContext.invocationId());
+        putMdc(MDC_TRACE_ID, resolveRequestId(invocationContext));
         putMdc(MDC_USER_ID, invocationContext.userId());
         putMdc(MDC_AGENT_NAME, invocationContext.agent() == null ? null : invocationContext.agent().name());
         putMdc(MDC_SESSION_ID, invocationContext.session() == null ? null : invocationContext.session().id());
@@ -154,6 +155,17 @@ public class MyLogPlugin extends BasePlugin {
             return;
         }
         MDC.put(key, value);
+    }
+
+    private String resolveRequestId(InvocationContext invocationContext) {
+        if (invocationContext == null) {
+            return null;
+        }
+        Object requestId = invocationContext.callbackContextData().get(RequestTraceConstants.CALLBACK_REQUEST_ID);
+        if (requestId != null && !String.valueOf(requestId).isBlank()) {
+            return String.valueOf(requestId);
+        }
+        return invocationContext.invocationId();
     }
 
     private long elapsedMillis(String invocationId) {

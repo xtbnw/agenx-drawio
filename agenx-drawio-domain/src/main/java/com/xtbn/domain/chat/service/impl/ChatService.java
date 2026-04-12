@@ -1,6 +1,7 @@
 package com.xtbn.domain.chat.service.impl;
 
 import com.google.adk.events.Event;
+import com.google.adk.agents.RunConfig;
 import com.google.adk.sessions.BaseSessionService;
 import com.google.adk.runner.Runner;
 import com.google.adk.sessions.Session;
@@ -22,6 +23,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -38,6 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.xtbn.types.common.Constants.APP_NAME;
+import static com.xtbn.types.common.RequestTraceConstants.CALLBACK_REQUEST_ID;
+import static com.xtbn.types.common.RequestTraceConstants.MDC_TRACE_ID;
 
 @Slf4j
 @Service
@@ -110,7 +114,7 @@ public class ChatService implements IChatService {
 
         Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
-        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
+        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg, buildDefaultRunConfig(), buildCallbackData());
 
         List<String> outputs = new ArrayList<>();
         events.blockingForEach(event -> outputs.add(event.stringifyContent()));
@@ -125,7 +129,7 @@ public class ChatService implements IChatService {
 
         Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
-        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
+        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg, buildDefaultRunConfig(), buildCallbackData());
 
         AtomicReference<String> finalOutput = new AtomicReference<>();
         AtomicReference<String> lastNonEmptyOutput = new AtomicReference<>();
@@ -159,7 +163,7 @@ public class ChatService implements IChatService {
 
         Runner runner = agentRegisterVO.getRunner();
         Content userMsg = Content.fromParts(Part.fromText(message));
-        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg);
+        Flowable<Event> events = runner.runAsync(userId, sessionId, userMsg, buildDefaultRunConfig(), buildCallbackData());
 
         return Flux.create(sink -> {
             Disposable disposable = events.subscribe(
@@ -245,7 +249,7 @@ public class ChatService implements IChatService {
 
         Content content = Content.builder().role("user").parts(parts).build();
         Runner runner = agentRegisterVO.getRunner();
-        Flowable<Event> events = runner.runAsync(chatCommandEntity.getUserId(), chatCommandEntity.getSessionId(), content);
+        Flowable<Event> events = runner.runAsync(chatCommandEntity.getUserId(), chatCommandEntity.getSessionId(), content, buildDefaultRunConfig(), buildCallbackData());
 
         List<String> outputs = new ArrayList<>();
         events.blockingForEach(event -> outputs.add(event.stringifyContent()));
@@ -377,5 +381,18 @@ public class ChatService implements IChatService {
 
     private boolean isPublicRootAgent(String rootAgentId) {
         return rootAgentId != null && !rootAgentId.startsWith(pluginDrawioXmlGuardProperties.getInternalAgentPrefix());
+    }
+
+    private Map<String, Object> buildCallbackData() {
+        Map<String, Object> callbackData = new ConcurrentHashMap<>();
+        String requestId = MDC.get(MDC_TRACE_ID);
+        if (requestId != null && !requestId.isBlank()) {
+            callbackData.put(CALLBACK_REQUEST_ID, requestId);
+        }
+        return callbackData;
+    }
+
+    private RunConfig buildDefaultRunConfig() {
+        return RunConfig.builder().build();
     }
 }
