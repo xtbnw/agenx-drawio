@@ -32,8 +32,14 @@ public class CostAccountingPlugin extends AbstractAgentPluginSupport {
         if (!properties.isEnabled()) {
             return super.beforeModelCallback(callbackContext, requestBuilder);
         }
-        requestModels.put(callbackKey(callbackContext, "model"), safe(requestBuilder.build().model().orElse("unknown")));
-        return super.beforeModelCallback(callbackContext, requestBuilder);
+        String key = callbackKey(callbackContext, "model");
+        requestModels.put(key, safe(requestBuilder.build().model().orElse("unknown")));
+        try {
+            return super.beforeModelCallback(callbackContext, requestBuilder);
+        } catch (Throwable throwable) {
+            requestModels.remove(key);
+            throw throwable;
+        }
     }
 
     @Override

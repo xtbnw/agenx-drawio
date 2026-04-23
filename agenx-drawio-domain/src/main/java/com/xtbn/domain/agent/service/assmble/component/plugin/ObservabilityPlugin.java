@@ -55,7 +55,8 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
             return super.beforeRunCallback(invocationContext);
         }
         fillInvocationMdc(invocationContext);
-        startTimer(invocationKey(invocationContext));
+        String invocationKey = invocationKey(invocationContext);
+        startTimer(invocationKey);
         Counter.builder(MetricsConstants.AGENT_REQUESTS_TOTAL)
                 .tags(commonTags(invocationContext))
                 .register(meterRegistry)
@@ -63,6 +64,9 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         try {
             log.info("Invocation started");
             return super.beforeRunCallback(invocationContext);
+        } catch (Throwable throwable) {
+            stopTimerMillis(invocationKey);
+            throw throwable;
         } finally {
             clearMdc();
         }
@@ -103,10 +107,14 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
             return super.beforeAgentCallback(agent, callbackContext);
         }
         fillCallbackMdc(callbackContext);
-        startTimer(callbackKey(callbackContext, "agent"));
+        String callbackKey = callbackKey(callbackContext, "agent");
+        startTimer(callbackKey);
         try {
             log.info("Agent started: {}", agent == null ? "" : agent.name());
             return super.beforeAgentCallback(agent, callbackContext);
+        } catch (Throwable throwable) {
+            stopTimerMillis(callbackKey);
+            throw throwable;
         } finally {
             clearMdc();
         }
@@ -143,7 +151,8 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         }
         fillCallbackMdc(callbackContext);
         String model = safe(requestBuilder.build().model().orElse("unknown"));
-        startTimer(callbackKey(callbackContext, "model"));
+        String callbackKey = callbackKey(callbackContext, "model");
+        startTimer(callbackKey);
         if (properties.isModelMetricsEnabled()) {
             Counter.builder(MetricsConstants.AGENT_MODEL_CALLS_TOTAL)
                     .tags(modelTags(callbackContext, model, "started"))
@@ -153,6 +162,9 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         try {
             log.info("Model started: {}", model);
             return super.beforeModelCallback(callbackContext, requestBuilder);
+        } catch (Throwable throwable) {
+            stopTimerMillis(callbackKey);
+            throw throwable;
         } finally {
             clearMdc();
         }
@@ -219,7 +231,8 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
             return super.beforeToolCallback(tool, toolArgs, toolContext);
         }
         fillToolMdc(tool, toolContext);
-        startTimer(toolKey(toolContext, tool));
+        String toolKey = toolKey(toolContext, tool);
+        startTimer(toolKey);
         if (properties.isToolMetricsEnabled()) {
             Counter.builder(MetricsConstants.AGENT_TOOL_CALLS_TOTAL)
                     .tags(toolTags(toolContext, tool, "started"))
@@ -229,6 +242,9 @@ public class ObservabilityPlugin extends AbstractAgentPluginSupport {
         try {
             log.info("Tool started: {}, argsKeys={}", tool == null ? "" : tool.name(), toolArgs == null ? "[]" : toolArgs.keySet());
             return super.beforeToolCallback(tool, toolArgs, toolContext);
+        } catch (Throwable throwable) {
+            stopTimerMillis(toolKey);
+            throw throwable;
         } finally {
             clearMdc();
         }

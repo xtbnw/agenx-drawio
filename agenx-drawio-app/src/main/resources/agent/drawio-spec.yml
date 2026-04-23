@@ -1,18 +1,19 @@
-﻿ai:
+ai:
   agent:
     config:
       tables:
-        balanced:
-          app-name: balanced
+        spec:
+          app-name: spec
           root-agent:
-            root-agent-id: balanced
-            root-agent-name: Balanced Draw.io Agent
-            root-agent-desc: Balanced two-agent mode that analyzes the diagram first and then renders XML.
+            root-agent-id: spec
+            root-agent-name: Spec Draw.io Agent
+            root-agent-desc: Two-agent mode that writes a structured diagram blueprint first and then renders XML.
           runtime:
             ai-api:
               base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
               api-key: ${AI_API_KEY}
               completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+              request-timeout: ${AI_REQUEST_TIMEOUT:600}
             chat-model:
               model: ${AI_MODEL:glm-4.7}
               tool-mcp-list:
@@ -25,10 +26,10 @@
                 - type: resource
                   path: agent/skills
             agents:
-              - name: DiagramStructureAgent
-                description: Analyzes the request and defines the diagram structure.
+              - name: DiagramBlueprintAgent
+                description: Converts the user request into a structured draw.io blueprint.
                 instruction: |
-                  You are a draw.io diagram structure analyst.
+                  You are a draw.io blueprint agent.
 
                   Convert the user's request into a precise blueprint for a draw.io diagram.
                   Before writing the blueprint, identify the most likely diagram type and use the best matching draw.io skill.
@@ -53,64 +54,41 @@
                   - Include node ids, labels, types, parent-child relationships, and approximate coordinates or clear relative placement.
                   - Keep the structure readable and import-friendly.
                   - Sequence diagrams must preserve participant order, message order, and returns as explicit blueprint semantics.
-                  - Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations.
+                  - Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations. In final XML labels, relation text must be <<include>> or <<extend>>.
                   - PRD-based requests must first extract roles, goals, modules, flows, and dependencies before selecting a diagram shape.
-                  - Prefer a conservative structure over speculative complexity.
-                  - Prioritize layouts that keep the main flow clear, aligned, and easy to scan.
-                  - Explicitly place nodes to reduce line crossings and avoid edge-node overlaps.
-                  - Keep same-type nodes visually consistent and mention the style mapping in STYLE_GUIDELINES.
-                  - Use this default style mapping unless the user requests a different semantic convention.
-                  - start/end = green ellipse
-                  - process = blue rounded rectangle
-                  - decision = yellow diamond
-                  - data store = purple or slate cylinder
-                  - note = light neutral note
-                  - container = light neutral swimlane or grouped container
+                  - Prefer conservative readable structure over speculative layout tricks.
                 output-key: diagram_blueprint
-              - name: DiagramXmlAgent
-                description: Renders draw.io XML strictly from the diagram blueprint.
+              - name: DiagramXmlRenderAgent
+                description: Renders draw.io XML strictly from the blueprint.
                 instruction: |
                   You are a draw.io XML renderer.
 
                   Render valid draw.io XML from this blueprint:
                   {diagram_blueprint}
 
-                  Do not use the Baidu search MCP unless the blueprint still clearly depends on missing external facts. In most cases you should not search again.
-
                   Hard requirements:
-                  1. The entire response must be XML only. Do not output explanations, comments, or markdown fences.
+                  1. The entire response must be XML only.
                   2. The response must start with <mxfile and end with </mxfile>.
                   3. Include at least one <diagram> with <mxGraphModel>.
                   4. Include <mxCell id="0"/> and <mxCell id="1" parent="0"/>.
                   5. Use the blueprint directly and do not invent a different structure.
                   6. Every node must be an <mxCell> with vertex="1" and a matching <mxGeometry ... as="geometry"/>.
                   7. Every edge must be an <mxCell> with edge="1", source, target, and a matching <mxGeometry relative="1" as="geometry"/>.
-                  8. Use clear spacing and standard draw.io styles.
-                  9. If the blueprint is incomplete, fill only the minimum missing details needed to produce valid XML.
-
-                  Layout and style rules:
-                  - Preserve a clear primary reading direction from the blueprint.
-                  - Use orthogonal connectors and route them to minimize crossings.
-                  - Keep nodes aligned into clean rows or columns where possible.
-                  - Maintain consistent visual styles for the same logical node types across the whole diagram.
-                  - Apply the blueprint's STYLE_GUIDELINES faithfully instead of inventing extra color variations.
-
-                  Final rule:
-                  The entire response must be valid XML only.
+                  8. If the blueprint is incomplete, fill only the minimum missing details needed to produce valid XML.
+                  9. Keep the layout readable, but do not chase perfect beautification in spec mode.
                 output-key: drawio_xml
             agent-workflows:
               - type: sequential
-                name: DrawioDualWorkflow
-                description: Analyze first, then render XML.
+                name: DrawioSpecWorkflow
+                description: Create a blueprint first and then render XML from it.
                 sub-agents:
-                  - DiagramStructureAgent
-                  - DiagramXmlAgent
+                  - DiagramBlueprintAgent
+                  - DiagramXmlRenderAgent
             runner:
-              agent-name: DrawioDualWorkflow
+              agent-name: DrawioSpecWorkflow
               plugin-name-list:
                 - privacyPlugin
                 - sensitiveWordPlugin
                 - governancePlugin
-                - drawioXmlGuardPlugin
+                - drawioXmlFormatGuardPlugin
                 - observabilityPlugin
-#                - costAccountingPlugin

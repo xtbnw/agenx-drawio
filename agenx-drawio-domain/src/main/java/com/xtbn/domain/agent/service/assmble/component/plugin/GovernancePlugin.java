@@ -4,6 +4,8 @@ import com.google.adk.agents.CallbackContext;
 import com.google.adk.agents.InvocationContext;
 import com.google.adk.models.LlmRequest;
 import com.google.adk.models.LlmResponse;
+import com.google.adk.tools.BaseTool;
+import com.google.adk.tools.ToolContext;
 import com.google.genai.types.Content;
 import com.xtbn.domain.agent.adapter.repository.IGovernanceRepository;
 import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
@@ -17,6 +19,8 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Slf4j
 @Service("governancePlugin")
@@ -45,6 +49,9 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             rejectIfGlobalConcurrentLimited(invocationContext);
             rejectIfConcurrentLimited(invocationContext, identity);
             return super.beforeRunCallback(invocationContext);
+        } catch (Throwable throwable) {
+            releaseConcurrencySafely(invocationContext);
+            throw throwable;
         } finally {
             clearMdc();
         }
@@ -70,6 +77,7 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
         }
         String identity = resolveIdentity(callbackContext);
         if (safely("breaker_check", () -> governanceRepository.isCircuitOpen(identity), false)) {
+            releaseConcurrencySafely(callbackContext == null ? null : callbackContext.invocationContext());
             markGovernanceRejection(callbackContext.invocationContext(), "circuit_open");
             throw new AppException(ResponseCode.CIRCUIT_BREAKER_OPEN.getCode(), ResponseCode.CIRCUIT_BREAKER_OPEN.getInfo());
         }
@@ -88,16 +96,28 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
 
     @Override
     public Maybe<LlmResponse> onModelErrorCallback(CallbackContext callbackContext, LlmRequest.Builder requestBuilder, Throwable throwable) {
-        if (!properties.isEnabled() || !properties.getBreaker().isEnabled()) {
+        if (!properties.isEnabled()) {
             return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
         }
-        String identity = resolveIdentity(callbackContext);
-        safely("breaker_failure", () -> governanceRepository.markCircuitFailure(
-                identity,
-                properties.getBreaker().getFailureThreshold(),
-                properties.getBreaker().getOpenSeconds()
-        ));
+        releaseConcurrencySafely(callbackContext == null ? null : callbackContext.invocationContext());
+        if (properties.getBreaker().isEnabled()) {
+            String identity = resolveIdentity(callbackContext);
+            safely("breaker_failure", () -> governanceRepository.markCircuitFailure(
+                    identity,
+                    properties.getBreaker().getFailureThreshold(),
+                    properties.getBreaker().getOpenSeconds()
+            ));
+        }
         return super.onModelErrorCallback(callbackContext, requestBuilder, throwable);
+    }
+
+    @Override
+    public Maybe<Map<String, Object>> onToolErrorCallback(BaseTool tool, Map<String, Object> toolArgs, ToolContext toolContext, Throwable throwable) {
+        if (!properties.isEnabled()) {
+            return super.onToolErrorCallback(tool, toolArgs, toolContext, throwable);
+        }
+        releaseConcurrencySafely(toolContext == null ? null : toolContext.invocationContext());
+        return super.onToolErrorCallback(tool, toolArgs, toolContext, throwable);
     }
 
     private void rejectIfBlacklisted(InvocationContext invocationContext, String identity) {
@@ -208,6 +228,13 @@ public class GovernancePlugin extends AbstractAgentPluginSupport {
             runnable.run();
             return Boolean.TRUE;
         }, Boolean.TRUE);
+    }
+
+    private void releaseConcurrencySafely(InvocationContext invocationContext) {
+        if (invocationContext == null) {
+            return;
+        }
+        safely("release_concurrency", () -> governanceRepository.releaseConcurrency(invocationContext.invocationId()));
     }
 
     private boolean safely(String action, BoolSupplier supplier, boolean defaultValue) {

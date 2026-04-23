@@ -1,0 +1,150 @@
+ai:
+  agent:
+    config:
+      tables:
+        max:
+          app-name: max
+          root-agent:
+            root-agent-id: max
+            root-agent-name: Max Draw.io Agent
+            root-agent-desc: High-cost mode that loops on blueprint, XML quality, and layout fixes until it passes or degrades.
+          runtime:
+            ai-api:
+              base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
+              api-key: ${AI_API_KEY}
+              completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+              request-timeout: ${AI_REQUEST_TIMEOUT:600}
+            chat-model:
+              model: ${AI_MODEL:glm-4.7}
+              tool-mcp-list:
+                - local:
+                    name: drawioXmlToolCallbackProvider
+                - sse:
+                    name: baidu-search
+                    base-uri: ${BAIDU_SEARCH_BASE_URI:http://appbuilder.baidu.com/v2/ai_search/mcp/}
+                    sse-endpoint: sse?api_key=${BAIDU_SEARCH_API_KEY:}
+                    request-timeout: 5
+              tool-skill-list:
+                - type: resource
+                  path: agent/skills
+            agents:
+              - name: BlueprintAgent
+                description: Generates the high-quality diagram blueprint.
+                instruction: |
+                  You are a high-precision draw.io blueprint agent.
+
+                  Convert the user's request into an execution-ready blueprint.
+                  Before writing the blueprint, identify the best matching draw.io skill and follow it.
+                  Use Baidu search only for external factual dependencies.
+
+                  Output plain text only with these sections:
+                  DIAGRAM_TYPE:
+                  PAGE_SIZE:
+                  LAYOUT_DIRECTION:
+                  CONTAINERS:
+                  NODES:
+                  EDGES:
+                  STYLE_GUIDELINES:
+                  ASSUMPTIONS:
+
+                  Hard requirements:
+                  - Include node ids, labels, types, parent-child relationships, and explicit coordinates or relative placement.
+                  - Reserve container padding and routing corridors.
+                  - Define distinct routing intent for repeated or parallel edges.
+                  - Sequence diagrams must allocate separate message bands for every message and return.
+                  - Use case diagrams must keep actors outside the boundary, call out non-overlapping routing for repeated actor edges, and use <<include>> or <<extend>> as relation labels in final XML.
+                output-key: max_blueprint
+              - name: MaxXmlRenderAgent
+                description: Renders the first XML draft from the blueprint.
+                instruction: |
+                  You are the max-mode XML render agent.
+
+                  Render valid draw.io XML from this blueprint:
+                  {max_blueprint}
+
+                  Hard requirements:
+                  1. Return XML only.
+                  2. Preserve the blueprint structure exactly.
+                  3. Include full draw.io root cells, node geometry, and edge geometry.
+                  4. Use orthogonal routing, distinct edge bands, visible container padding, and explicit waypoints when needed.
+                  5. Prefer correctness and clarity over compactness.
+                output-key: max_drawio_xml
+              - name: LayoutJudgeAgent
+                description: Reviews the current XML and decides whether another refinement pass is required.
+                instruction: |
+                  You are the max-mode layout judge.
+
+                  Review this draw.io XML:
+                  {max_drawio_xml}
+
+                  First call analyzeDrawioXml exactly once with:
+                  - xml = the current XML
+                  - profile = max
+
+                  Use the tool report as the primary evidence for your verdict. Only add issues that are clearly visible and high-confidence.
+
+                  Output plain text only using this exact format:
+                  JUDGE_STATUS: PASS or REVISE
+                  CRITICAL_ISSUES:
+                  - item
+                  FIX_PLAN:
+                  - item
+
+                  Review criteria:
+                  - XML structure remains import-safe.
+                  - Containers do not overlap and fully enclose their children.
+                  - Repeated, parallel, sequence, and actor-usecase edges do not collapse onto the same long segment.
+                  - Reading direction, spacing, and style consistency stay clear.
+                  - The user's requested semantics remain intact.
+                output-key: max_layout_verdict
+              - name: MaxXmlRefineAgent
+                description: Refines the current XML according to the latest verdict.
+                instruction: |
+                  You are the max-mode XML refine agent.
+
+                  Current XML:
+                  {max_drawio_xml}
+
+                  Latest verdict:
+                  {max_layout_verdict}
+
+                  Before revising, call analyzeDrawioXml exactly once with:
+                  - xml = the current XML
+                  - profile = max
+
+                  Use the tool report and the verdict together. Fix the concrete reported issues first. Do not make unrelated aesthetic rewrites.
+
+                  If JUDGE_STATUS is PASS, return the current XML unchanged.
+                  Otherwise revise the XML and return the improved XML.
+
+                  Hard requirements:
+                  1. Return XML only.
+                  2. Preserve ids and semantics unless a structural repair is required.
+                  3. Fix only the concrete issues in the verdict.
+                  4. Use explicit routing bands, elbows, or waypoints to separate colliding edges.
+                  5. Keep containers padded and non-overlapping.
+                output-key: max_drawio_xml
+            agent-workflows:
+              - type: loop
+                name: DrawioMaxLoop
+                description: Judge and refine the XML repeatedly until quality stabilizes.
+                sub-agents:
+                  - LayoutJudgeAgent
+                  - MaxXmlRefineAgent
+                max-iterations: 4
+              - type: sequential
+                name: DrawioMaxWorkflow
+                description: Build blueprint, render XML, then loop on quality refinement.
+                sub-agents:
+                  - BlueprintAgent
+                  - MaxXmlRenderAgent
+                  - DrawioMaxLoop
+            runner:
+              agent-name: DrawioMaxWorkflow
+              plugin-name-list:
+                - privacyPlugin
+                - sensitiveWordPlugin
+                - governancePlugin
+                - drawioXmlFormatGuardPlugin
+                - drawioLayoutGuardPlugin
+                - observabilityPlugin

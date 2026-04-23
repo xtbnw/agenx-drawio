@@ -2,7 +2,8 @@ package com.xtbn.config;
 
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginCostProperties;
-import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioXmlGuardProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioLayoutGuardProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioXmlFormatGuardProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginGovernanceProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginObservabilityProperties;
 import com.xtbn.domain.agent.model.valobj.properties.PluginPrivacyProperties;
@@ -31,7 +32,8 @@ import java.util.ArrayList;
         PluginPrivacyProperties.class,
         PluginSensitiveWordProperties.class,
         PluginCostProperties.class,
-        PluginDrawioXmlGuardProperties.class
+        PluginDrawioXmlFormatGuardProperties.class,
+        PluginDrawioLayoutGuardProperties.class
 })
 public class AgentAutoConfig implements ApplicationListener<ApplicationReadyEvent> {
     @Resource

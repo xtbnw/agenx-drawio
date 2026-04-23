@@ -58,6 +58,9 @@ public class MyLogPlugin extends BasePlugin {
         try {
             log.info("Invocation started");
             return super.beforeRunCallback(invocationContext);
+        } catch (Throwable throwable) {
+            invocationStartTimes.remove(invocationContext.invocationId());
+            throw throwable;
         } finally {
             clearMdc();
         }

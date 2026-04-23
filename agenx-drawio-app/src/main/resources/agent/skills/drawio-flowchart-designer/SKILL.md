@@ -19,7 +19,7 @@ Use this skill when the user explicitly asks for a flowchart, business process d
 - Identify one primary flow axis first. Default to top-to-bottom.
 - Separate main path, success path, failure path, retry path, and notes.
 - Normalize the process into start, process, decision, database, note, container, and end semantics.
-- If the user provides PRD or long prose, extract actors, goals, key steps, branches, modules, and dependencies before drawing.
+- If the user provides PRD or long prose, extract only the actors, goals, key steps, branches, and dependencies needed for the diagram.
 
 ## Output Constraints
 
@@ -28,7 +28,6 @@ Use this skill when the user explicitly asks for a flowchart, business process d
 - Use explicit branch labels such as yes, no, success, fail, retry only when they add meaning.
 - Keep the graph compact but do not trade away readability.
 - In blueprint modes, focus on node semantics, branch semantics, and relative placement.
-- In XML modes, preserve the same semantics without adding decorative structure.
 
 ## Layout Rules
 
@@ -38,6 +37,7 @@ Use this skill when the user explicitly asks for a flowchart, business process d
 - Place failure or retry branches outside the main path and route return edges around the outer side.
 - Use containers only when they clarify ownership, stage, or subsystem boundaries.
 - Leave enough whitespace so branch edges do not run through process nodes.
+- Separate connectors with distinct sides or elbow routes when multiple edges leave or enter the same node.
 
 ## Node And Edge Semantics
 
@@ -54,3 +54,4 @@ Use this skill when the user explicitly asks for a flowchart, business process d
 - Do not turn a decision into a normal process box.
 - Do not route retry or failure edges through the center of the main flow.
 - Do not expand every sentence from a PRD into a separate node.
+- Do not let yes/no, retry, or exception branches fully overlap each other for long distances.

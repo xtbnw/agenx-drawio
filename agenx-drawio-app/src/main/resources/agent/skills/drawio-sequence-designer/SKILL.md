@@ -41,6 +41,7 @@ Use this skill when the user explicitly asks for a sequence diagram, interaction
 - Assign every message or step to its own horizontal band with strictly increasing y coordinates.
 - Do not place multiple steps in the same horizontal band.
 - Do not reuse a vertical region that already belongs to an earlier step for a later step.
+- If two messages involve the same participant pair, do not place them on the same horizontal path; use separate y bands and, when needed, distinct elbow offsets.
 - Keep participant headers at one top row and do not place later interaction blocks back into the same top area.
 - Increase page height for long conversations instead of compressing rows until they overlap.
 - Keep return messages visually distinct only when they carry useful meaning.
@@ -59,6 +60,7 @@ Use this skill when the user explicitly asks for a sequence diagram, interaction
 - Use `shape=umlLifeline` for participants when generating draw.io XML.
 - Use slim activation bars inside the participant container for active processing windows.
 - Use solid arrows for forward calls and dashed arrows for returns when the return itself is meaningful.
+- If repeated calls or callbacks between the same two participants would visually merge, separate them with staggered rows and explicit waypoint offsets instead of reusing the same segment.
 
 ## XML Skeleton Pattern
 
@@ -152,3 +154,13 @@ Use the pattern above as a template, not as fixed content:
 - Do not stack multiple stages into the same vertical region so that earlier and later interactions overlap.
 - Do not place participant headers, notes, and message blocks on top of each other to save space.
 - Do not collapse sequence interactions into overlapping process blocks or generic flowchart rows.
+- Do not allow two message arrows, dashed returns, or self-calls to visually coincide on the same line segment.
+
+## Anti-pattern Example
+
+- Bad pattern:
+  Two different messages between the same participant pair are placed on the same y band, so the solid call, dashed return, or callback visually merge into one line.
+- Why it is bad:
+  Readers cannot tell whether there was one interaction or several ordered interactions, and labels or arrowheads become ambiguous.
+- Correct fix:
+  Give each message its own strictly increasing y band. If the same participant pair communicates multiple times, stagger the rows and, when needed, add distinct elbow offsets or waypoints so no two interactions share the same long segment.

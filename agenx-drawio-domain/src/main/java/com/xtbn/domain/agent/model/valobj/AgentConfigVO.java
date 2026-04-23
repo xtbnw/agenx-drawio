@@ -65,6 +65,7 @@ public class AgentConfigVO {
             private String baseUrl;
             private String apiKey;
             private String completionsPath;
+            private Integer requestTimeout = 600;
 //            private String embeddingsPath;
 
         }

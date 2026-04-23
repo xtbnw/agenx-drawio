@@ -1,28 +1,26 @@
 package com.xtbn.domain.agent.service.assmble.component.plugin.support;
 
+import com.xtbn.types.enums.DrawioXmlValidationErrorCode;
 import lombok.Builder;
 import lombok.Getter;
-import com.xtbn.types.enums.DrawioXmlValidationErrorCode;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Component
 public class DrawioXmlValidationSupport {
+    private final DrawioXmlParsingSupport parsingSupport;
+
+    public DrawioXmlValidationSupport(DrawioXmlParsingSupport parsingSupport) {
+        this.parsingSupport = parsingSupport;
+    }
 
     public ValidationResult validate(String xml) {
         if (xml == null || xml.isBlank()) {
@@ -31,11 +29,9 @@ public class DrawioXmlValidationSupport {
 
         Document document;
         try {
-            DocumentBuilderFactory factory = secureFactory();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            document = builder.parse(new InputSource(new StringReader(xml)));
+            document = parsingSupport.parse(xml);
         } catch (Exception e) {
-            return ValidationResult.invalid("XML_SYNTAX_ERROR", sanitizeMessage(e.getMessage()));
+            return ValidationResult.invalid("XML_SYNTAX_ERROR", parsingSupport.sanitizeMessage(e.getMessage()));
         }
 
         Element root = document.getDocumentElement();
@@ -63,7 +59,6 @@ public class DrawioXmlValidationSupport {
 
     private ValidationResult validateCells(Element rootElement) {
         Map<String, Element> cellsById = new HashMap<>();
-        List<Element> cells = new ArrayList<>();
         Set<String> duplicateIds = new HashSet<>();
 
         NodeList children = rootElement.getChildNodes();
@@ -72,7 +67,6 @@ public class DrawioXmlValidationSupport {
             if (!(node instanceof Element cell) || !"mxCell".equals(cell.getTagName())) {
                 continue;
             }
-            cells.add(cell);
             String id = cell.getAttribute("id");
             if (id == null || id.isBlank()) {
                 return ValidationResult.invalid("MISSING_CELL_ID", "Every mxCell must have a non-empty id.");
@@ -95,7 +89,7 @@ public class DrawioXmlValidationSupport {
             return ValidationResult.invalid("MISSING_ROOT_CELL_1", "mxCell id=1 with parent=0 is required.");
         }
 
-        for (Element cell : cells) {
+        for (Element cell : cellsById.values()) {
             String id = cell.getAttribute("id");
             String parent = cell.getAttribute("parent");
             if (!parent.isBlank() && !cellsById.containsKey(parent)) {
@@ -139,18 +133,6 @@ public class DrawioXmlValidationSupport {
         return ValidationResult.valid();
     }
 
-    private DocumentBuilderFactory secureFactory() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(false);
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setExpandEntityReferences(false);
-        factory.setXIncludeAware(false);
-        return factory;
-    }
-
     private Element firstChildElement(Element parent, String tagName) {
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -179,13 +161,6 @@ public class DrawioXmlValidationSupport {
             return false;
         }
         return Double.parseDouble(value) > 0D;
-    }
-
-    private String sanitizeMessage(String message) {
-        if (message == null || message.isBlank()) {
-            return "XML parsing failed.";
-        }
-        return message.replaceAll("\\s+", " ").trim();
     }
 
     @Getter

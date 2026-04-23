@@ -13,6 +13,7 @@ ai:
               base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
               api-key: ${AI_API_KEY}
               completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+              request-timeout: ${AI_REQUEST_TIMEOUT:600}
             chat-model:
               model: ${AI_MODEL:glm-4.7}
               tool-mcp-list:

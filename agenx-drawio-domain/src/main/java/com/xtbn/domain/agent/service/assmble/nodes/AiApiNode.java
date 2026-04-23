@@ -9,6 +9,8 @@ import com.xtbn.domain.agent.service.assmble.factory.DefaultAssembleFactory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -24,11 +26,23 @@ public class AiApiNode extends AbstractSupportNode {
         // 编写 AiApi 构建逻辑
         AgentConfigVO agentConfigVO = requestParameter.getAgentConfigVO();
         AgentConfigVO.AgentRuntime.AiApi aiApiConfig=agentConfigVO.getRuntime().getAiApi();
+        int requestTimeoutSeconds = aiApiConfig.getRequestTimeout() == null || aiApiConfig.getRequestTimeout() <= 0
+                ? 600
+                : aiApiConfig.getRequestTimeout();
+        int requestTimeoutMillis = requestTimeoutSeconds * 1000;
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(requestTimeoutMillis);
+        requestFactory.setReadTimeout(requestTimeoutMillis);
+
+        RestClient.Builder restClientBuilder = RestClient.builder()
+                .requestFactory(requestFactory);
 
         OpenAiApi openAiApi=OpenAiApi.builder()
                 .baseUrl(aiApiConfig.getBaseUrl())
                 .apiKey(aiApiConfig.getApiKey())
                 .completionsPath(aiApiConfig.getCompletionsPath())
+                .restClientBuilder(restClientBuilder)
                 .build();
 
         dynamicContext.setOpenAiApi(openAiApi);

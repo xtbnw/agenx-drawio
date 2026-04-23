@@ -40,6 +40,13 @@ mybatis:
   config-location: classpath:/mybatis/config/mybatis-config.xml
 
 spring:
+  config:
+    import:
+      - classpath:agent/drawio-fast.yml
+      - classpath:agent/drawio-spec.yml
+      - classpath:agent/drawio-polish.yml
+      - classpath:agent/drawio-max.yml
+      - classpath:agent/drawio-degrade.yml
   data:
     redis:
       host: ${REDIS_HOST:127.0.0.1}

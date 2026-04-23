@@ -13,6 +13,7 @@ ai:
               base-url: ${AI_API_BASE_URL:https://api.openai.com}
               api-key: ${AI_API_KEY:replace-me}
               completions-path: ${AI_COMPLETIONS_PATH:/v1/chat/completions}
+              request-timeout: ${AI_REQUEST_TIMEOUT:600}
             chat-model:
               model: ${AI_MODEL:gpt-4o-mini}
               tool-mcp-list:

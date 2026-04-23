@@ -13,6 +13,7 @@
               base-url: ${AI_API_BASE_URL:https://open.bigmodel.cn/api/paas/v4/}
               api-key: ${AI_API_KEY}
               completions-path: ${AI_COMPLETIONS_PATH:chat/completions}
+              request-timeout: ${AI_REQUEST_TIMEOUT:600}
             chat-model:
               model: ${AI_MODEL:glm-4.7}
               tool-mcp-list:
@@ -69,8 +70,10 @@
                   Layout rules:
                   - Keep a clear primary reading direction and avoid unnecessary backtracking lines.
                   - Prefer orthogonal connectors and route them around node groups to minimize crossings.
+                  - Do not let two different connectors share the same long straight segment. Use different exit sides, entry sides, rows, or waypoints to visually separate them.
                   - Leave enough spacing between rows, columns, nodes, and containers so nodes, labels, borders, and edges do not overlap.
                   - Align sibling nodes within the same row or column whenever possible.
+                  - Size containers only after placing their contents, and reserve padding plus connector routing space so borders never cover children, labels, or edges.
                   - Keep similar logical node types visually consistent throughout the same diagram and use a limited unified palette.
                   - Use this semantic style mapping unless the user requests another convention:
                     start/end = green ellipse
@@ -83,6 +86,7 @@
                   Diagram-specific rules:
                   - Flowcharts: prefer top-to-bottom layout unless the request strongly suggests another direction.
                   - Follow the chosen specialized skill for sequence, use case, PRD-based, and other classified diagrams.
+                  - For use case diagrams, label use-case relations as <<include>> and <<extend>> rather than <include> or <extend>.
                   - For container-heavy diagrams, preserve enclosure, spacing, and readable grouping instead of compact packing.
 
                   Final rule:
@@ -93,6 +97,6 @@
                 - privacyPlugin
                 - sensitiveWordPlugin
                 - governancePlugin
-                - drawioXmlGuardPlugin
+                - drawioXmlFormatGuardPlugin
                 - observabilityPlugin
 #                - costAccountingPlugin

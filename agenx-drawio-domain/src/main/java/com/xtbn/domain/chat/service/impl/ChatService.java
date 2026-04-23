@@ -11,7 +11,7 @@ import com.xtbn.domain.agent.adapter.port.registry.IBeanRegistry;
 import com.xtbn.domain.agent.model.valobj.AgentConfigVO;
 import com.xtbn.domain.agent.model.valobj.AgentRegisterVO;
 import com.xtbn.domain.agent.model.valobj.properties.AgentAutoConfigProperties;
-import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioXmlGuardProperties;
+import com.xtbn.domain.agent.model.valobj.properties.PluginDrawioXmlFormatGuardProperties;
 import com.xtbn.domain.chat.model.entity.ChatCommandEntity;
 import com.xtbn.domain.chat.model.valobj.ChatHistoryMessageVO;
 import com.xtbn.domain.chat.model.valobj.ChatSessionDetailVO;
@@ -60,7 +60,7 @@ public class ChatService implements IChatService {
     @Resource
     private AgentAutoConfigProperties agentAutoConfigProperties;
     @Resource
-    private PluginDrawioXmlGuardProperties pluginDrawioXmlGuardProperties;
+    private PluginDrawioXmlFormatGuardProperties pluginDrawioXmlFormatGuardProperties;
     @Resource
     private BaseSessionService sessionService;
 
@@ -380,7 +380,7 @@ public class ChatService implements IChatService {
     }
 
     private boolean isPublicRootAgent(String rootAgentId) {
-        return rootAgentId != null && !rootAgentId.startsWith(pluginDrawioXmlGuardProperties.getInternalAgentPrefix());
+        return rootAgentId != null && !rootAgentId.startsWith(pluginDrawioXmlFormatGuardProperties.getInternalAgentPrefix());
     }
 
     private Map<String, Object> buildCallbackData() {

@@ -17,9 +17,9 @@ spring:
   config:
     import:
       - classpath:agent/drawio-fast.yml
-      - classpath:agent/drawio-balanced.yml
-      - classpath:agent/drawio-quality.yml
-      - classpath:agent/drawio-stable.yml
+      - classpath:agent/drawio-spec.yml
+      - classpath:agent/drawio-polish.yml
+      - classpath:agent/drawio-max.yml
       - classpath:agent/drawio-degrade.yml
   datasource:
     username: root
