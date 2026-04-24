@@ -52,7 +52,7 @@ ai:
                   - Reserve container padding and routing corridors.
                   - Define distinct routing intent for repeated or parallel edges.
                   - Sequence diagrams must allocate separate message bands for every message and return.
-                  - Use case diagrams must keep actors outside the boundary, call out non-overlapping routing for repeated actor edges, and use <<include>> or <<extend>> as relation labels in final XML.
+                  - Use case diagrams must keep actors outside the boundary and call out non-overlapping routing for repeated actor edges.
                 output-key: max_blueprint
               - name: MaxXmlRenderAgent
                 description: Renders the first XML draft from the blueprint.

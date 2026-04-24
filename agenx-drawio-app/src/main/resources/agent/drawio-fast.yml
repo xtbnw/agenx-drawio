@@ -86,7 +86,6 @@
                   Diagram-specific rules:
                   - Flowcharts: prefer top-to-bottom layout unless the request strongly suggests another direction.
                   - Follow the chosen specialized skill for sequence, use case, PRD-based, and other classified diagrams.
-                  - For use case diagrams, label use-case relations as <<include>> and <<extend>> rather than <include> or <extend>.
                   - For container-heavy diagrams, preserve enclosure, spacing, and readable grouping instead of compact packing.
 
                   Final rule:

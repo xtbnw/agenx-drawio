@@ -11,6 +11,34 @@ Use this skill when the user wants a diagram that should be rendered as draw.io 
 
 Generate XML that draw.io can import directly while preserving a clean structure, readable layout, and stable geometry.
 
+## Modeling Order
+
+Before writing XML, normalize the diagram into this abstract model:
+
+1. Determine the dominant diagram type or nearest structural family.
+2. Identify the main reading direction.
+3. Extract node classes, edge classes, and any containers or regions.
+4. Mark which edges are ordered, which are hierarchical, and which are cross-region dependencies.
+5. Decide which relations must be visually separated rather than sharing one route.
+
+If the diagram is unfamiliar, do not guess a decorative shape first. Reduce it to:
+
+- nodes
+- edges
+- containers or groups
+- ordering or hierarchy
+- key labels
+
+Then map that structure into draw.io XML.
+
+## Generic Mapping Heuristics
+
+- Ordered interactions or timelines: place stages on distinct bands.
+- Hierarchies or trees: place parents before children and keep one clear expansion direction.
+- Hub-and-spoke or concept maps: place the hub centrally and fan related nodes outward by group.
+- Layered systems: stack or column-align layers, then route cross-layer edges through whitespace.
+- Mixed or unfamiliar diagrams: prefer a simple layered or grouped layout over a novel but unstable arrangement.
+
 ## Output Contract
 
 - Output XML only.
@@ -43,6 +71,7 @@ Generate XML that draw.io can import directly while preserving a clean structure
 - Architecture diagrams prefer left-to-right or layered grouping.
 - Sequence-like diagrams keep actors left-to-right and interactions top-to-bottom.
 - Mind maps keep the root centered and branch outward consistently.
+- Unknown diagrams should fall back to the simplest readable grouped or layered layout.
 - Avoid overlaps and leave whitespace between groups.
 - Keep a single dominant reading direction and avoid unnecessary backtracking edges.
 - Prefer aligned rows or columns for sibling nodes.

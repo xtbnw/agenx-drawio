@@ -54,7 +54,7 @@ ai:
                   - Include node ids, labels, types, parent-child relationships, and approximate coordinates or clear relative placement.
                   - Keep the structure readable and import-friendly.
                   - Sequence diagrams must preserve participant order, message order, and returns as explicit blueprint semantics.
-                  - Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations. In final XML labels, relation text must be <<include>> or <<extend>>.
+                  - Use case diagrams must preserve actor placement, system boundary membership, and include or extend relations.
                   - PRD-based requests must first extract roles, goals, modules, flows, and dependencies before selecting a diagram shape.
                   - Prefer conservative readable structure over speculative layout tricks.
                 output-key: diagram_blueprint

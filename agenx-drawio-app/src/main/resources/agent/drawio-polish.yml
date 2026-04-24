@@ -48,7 +48,6 @@ ai:
                   5. Every connector must be an <mxCell> with edge="1", source, target, and geometry.
                   6. Prefer a readable, complete structure.
                   7. Avoid obvious container collisions and gross edge clutter, but do not over-iterate.
-                  8. For use case diagrams, render relation labels as <<include>> and <<extend>>.
                 output-key: initial_drawio_xml
               - name: LayoutReviewAgent
                 description: Reviews the XML draft and outputs layout issues plus a fix plan.
