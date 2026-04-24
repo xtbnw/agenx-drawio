@@ -1,17 +1,35 @@
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 .kotlin
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+### Local IDE / Editor ###
+.vscode/
 *.iws
 *.iml
 *.ipr
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/httpRequests/
+.idea/queries/
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/dataSources/
+.idea/**/workspace.xml
+
+### Local Runtime / Secrets ###
+.env
+.env.*
+!.env.example
+.local-config
+data/
+*.log
 
 ### Eclipse ###
 .apt_generated
@@ -28,16 +46,10 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
 
 ### Mac OS ###
 .DS_Store
-/.idea/
-/.mvn/
-/data/
+
+### Project-specific local files ###
 /agenx-drawio-domain/src/test/
+/.idea/

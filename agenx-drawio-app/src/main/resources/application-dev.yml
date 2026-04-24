@@ -23,7 +23,7 @@ spring:
       - classpath:agent/drawio-degrade.yml
   datasource:
     username: root
-    password: ${DB_PASSWORD:123456}
+    password: ${DB_PASSWORD:change-me}
     url: jdbc:mysql://127.0.0.1:13306/agenx_drawio?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
   hikari:
